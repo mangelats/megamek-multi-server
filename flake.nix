@@ -15,6 +15,8 @@
         deps = [
           (pkgs.python3.withPackages (ps: [
             ps.fastapi
+            ps.pydantic
+            ps.jinja2
           ] ++ ps.fastapi.optional-dependencies.standard
           ))
         ];
