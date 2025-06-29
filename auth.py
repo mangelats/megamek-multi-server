@@ -1,70 +1,80 @@
-from datetime import datetime, timedelta, timezone
-import aiofiles
-import jwt
 
-from typing import Annotated, Any, Optional
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestFormStrict
-from passlib.context import CryptContext
-from pydantic import BaseModel
-from jwt.exceptions import InvalidTokenError
+from functools import wraps
+import os
+import stat
+import flask
+from flask import Request
+import flask_login
+from typing import Callable, Generator, Optional, ParamSpec, TypeVar
+from werkzeug.security import generate_password_hash, check_password_hash
+Param = ParamSpec("Param")
+RetType = TypeVar("RetType")
 
+hashes = {
+    "test": "scrypt:32768:8:1$lWV55EaDMutmo8c7$aa5600942ddcda2ae2e1dedfad51618336fa7314b931b920e3fd680d5b3b9f98973b1f8b1761a60d5d560afc1da57b7c615d82b75c44cfc552c1e254e0290e56"
+}
 
-SECRET_KEY = "40d193f3f97e1d85e7c82981403bbaf8c20d3a07656d3e2f4bcc3cd9d6254203"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE = timedelta(minutes=30)
+class User(flask_login.UserMixin):
+    id: str
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    @staticmethod
+    def from_username(username: str) -> 'User':
+        user = User()
+        user.id = username
+        return user
 
-
-
-class User(BaseModel):
-    username: str
-
-class UserInDB(User):
-    hashed_password: str
-
-async def get_user(username: str) -> Optional[UserInDB]:
-    async with aiofiles.open('secrets/passwords.txt', mode='r') as f:
-        async for line in f:
-            [u, hashed_password] = line.rstrip().rsplit(":", 1)
-            if u == username:
-                return UserInDB(username=username, hashed_password=hashed_password)
+    @property
+    def username(self) -> str:
+        return self.id
 
 
-async def decode_token(token: str) -> Optional[UserInDB]:
-    # This doesn't provide any security at all
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload:
-            return await get_user(payload.get('username'))
-    except InvalidTokenError:
-        pass
-
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
-    user = await decode_token(token)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+def login(username: str, password: str) -> Optional[User]:
+    hashes = get_hashes()
+    if username not in hashes or not check_password_hash(hashes[username], password):
+        return
+    
+    user = User.from_username(username)
+    flask_login.login_user(user)
     return user
 
-async def login_inner(form_data: OAuth2PasswordRequestFormStrict):
-    user = await get_user(form_data.username)
-    if user and pwd_context.verify(form_data.password, user.hashed_password):
-        to_encode: dict[str, Any] = { "username": user.username, "exp": datetime.now(timezone.utc) + ACCESS_TOKEN_EXPIRE }
-        token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return {"access_token": token, "token_type": "bearer"}
-    
-async def login(form_data: OAuth2PasswordRequestFormStrict):
-    result = await login_inner(form_data)
-    if result:
-        return result
-    else:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+def logout() -> None:
+    flask_login.logout_user()
 
-async def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+current_user: User = flask_login.current_user
+
+login_manager = flask_login.LoginManager()
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def user_loader(username: str) -> Optional[User]:
+    if username not in get_hashes():
+        return
+
+    return User.from_username(username)
+
+@login_manager.request_loader
+def request_loader(request: Request) -> Optional[User]:
+    username = request.form.get('username')
+    if username not in get_hashes():
+        return
+
+    return User.from_username(username)
+
+def get_hashes() -> dict[str, str]:
+    # return hashes
+    # TODO: cache with _sig
+    result = {}
+    with open(PWDS_PATH, "r") as file:
+        for line in file:
+            [username, hashed_password] = line.rstrip().split(" ", 1)
+            result[username] = hashed_password
+    return result
+
+
+# def _sig(path: str):
+#     st = os.stat(path)
+#     return (stat.S_IFMT(st.st_mode),
+#             st.st_size,
+#             st.st_mtime)
+
+PWDS_PATH = "secrets/passwords.txt"

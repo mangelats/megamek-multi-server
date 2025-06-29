@@ -15,21 +15,9 @@
         deps = [
           (pkgs.python3.withPackages (ps: [
             # Base
-            ps.fastapi
-
-            # Responses
-            ps.pydantic # Serialize
-            ps.jinja2   # Templates
-
-            # Security
-            ps.passlib # Passwords
-            ps.pyjwt   # JWT tokens
-
-            # IO
-            ps.aiofiles
+            ps.flask
+            ps.flask_login
           ]
-          ++ ps.fastapi.optional-dependencies.standard
-          ++ ps.passlib.optional-dependencies.bcrypt
           ))
         ];
       in
