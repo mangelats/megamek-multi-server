@@ -19,6 +19,8 @@ def login():
             if next:
                 del session['next']
             return flask.redirect(next or '/')
+        else:
+            error = "Usuari o contrasenya incorrecte"
 
     return render_template("login.html", error=error)
 

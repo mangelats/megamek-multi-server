@@ -1,14 +1,8 @@
-
-from functools import wraps
-import os
-import stat
-import flask
 from flask import Request
 import flask_login
-from typing import Callable, Generator, Optional, ParamSpec, TypeVar
-from werkzeug.security import generate_password_hash, check_password_hash
-Param = ParamSpec("Param")
-RetType = TypeVar("RetType")
+from typing import Optional
+from pwd_file import hashed_passwords
+from werkzeug.security import check_password_hash
 
 hashes = {
     "test": "scrypt:32768:8:1$lWV55EaDMutmo8c7$aa5600942ddcda2ae2e1dedfad51618336fa7314b931b920e3fd680d5b3b9f98973b1f8b1761a60d5d560afc1da57b7c615d82b75c44cfc552c1e254e0290e56"
@@ -29,7 +23,7 @@ class User(flask_login.UserMixin):
 
 
 def login(username: str, password: str) -> Optional[User]:
-    hashes = get_hashes()
+    hashes = hashed_passwords()
     if username not in hashes or not check_password_hash(hashes[username], password):
         return
     
@@ -47,7 +41,7 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def user_loader(username: str) -> Optional[User]:
-    if username not in get_hashes():
+    if username not in hashed_passwords():
         return
 
     return User.from_username(username)
@@ -55,26 +49,7 @@ def user_loader(username: str) -> Optional[User]:
 @login_manager.request_loader
 def request_loader(request: Request) -> Optional[User]:
     username = request.form.get('username')
-    if username not in get_hashes():
+    if username not in hashed_passwords():
         return
 
     return User.from_username(username)
-
-def get_hashes() -> dict[str, str]:
-    # return hashes
-    # TODO: cache with _sig
-    result = {}
-    with open(PWDS_PATH, "r") as file:
-        for line in file:
-            [username, hashed_password] = line.rstrip().split(" ", 1)
-            result[username] = hashed_password
-    return result
-
-
-# def _sig(path: str):
-#     st = os.stat(path)
-#     return (stat.S_IFMT(st.st_mode),
-#             st.st_size,
-#             st.st_mtime)
-
-PWDS_PATH = "secrets/passwords.txt"
