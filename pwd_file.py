@@ -1,12 +1,17 @@
 import os
 import stat
 
-_Signature = tuple[int, int, float]
-
 PWDS_PATH = "secrets/passwords.txt"
+
+_Signature = tuple[int, int, float]
 _cache: tuple[_Signature, dict[str, str]] | None = None
 
-def hashed_passwords() -> dict[str, str]:
+
+def hashed_password(username: str) -> str | None:
+    assert username, "Invalid username!"
+    return _hashed_passwords().get(username)
+
+def _hashed_passwords() -> dict[str, str]:
     global _cache
 
     sig = _signature(PWDS_PATH)
@@ -22,5 +27,6 @@ def hashed_passwords() -> dict[str, str]:
     return value
 
 def _signature(path: str) -> _Signature:
+    """Computes a unique signature for a path state."""
     st = os.stat(path)
     return (stat.S_IFMT(st.st_mode), st.st_size, st.st_mtime)
