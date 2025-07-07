@@ -49,65 +49,71 @@
         "lib/txw2-4.0.5.jar"
         "lib/istack-commons-runtime-4.1.2.jar"
     ];
-in rec {
-    packages = let
-        src = pkgs.fetchzip {
-            url = "https://github.com/MegaMek/megamek/releases/download/v0.50.06/MegaMek-0.50.06.tar.gz";
-            hash = "sha256-1gPe34RFgHsL+wx9HmqpFHlSKUqFeFYkq1SJQwv4I1Y=";
-        };
-        base = pkgs.stdenvNoCC.mkDerivation {
-          pname = "megamek-base";
-          version = "0.50.6";
-          src = src;
-          installPhase = ''
-            mkdir -p $out/mmconf/
-            cp ${escapeShellArgs mmconf} $out/mmconf/
 
-            mkdir -p $out/data/
-            cp -r ${escapeShellArgs data} $out/data/
-
-            mkdir -p $out/lib/
-            cp ${escapeShellArgs libs} $out/lib/
-          '';
-        };
-        classpath = (concatStringsSep ":" (map (path: "${base}/${path}") libs));
-        check_deps = pkgs.writeShellApplication {
-          name = "check-megamek-deps";
-
-          text = ''
-            ${jdk}/bin/jdeps \
-              --multi-release base \
-              --missing-deps \
-              -classpath "${classpath}" \
-              "${base}/lib/MegaMek.jar"
-          '';
-        };
-        server = pkgs.writeShellApplication {
-          name = "megamek-server";
-
-          text = ''
-            rm -rf runtime
-            mkdir runtime
-            mkdir runtime/userdata/
-            mkdir runtime/logs/
-            ln -s ${base}/mmconf runtime
-            ln -s ${base}/data runtime
-
-            cd runtime
-            ${jdk}/bin/java \
-                -Xmx4096m \
-                --add-opens "java.base/java.util=ALL-UNNAMED" \
-                --add-opens "java.base/java.util.concurrent=ALL-UNNAMED" \
-                -Dsun.awt.disablegrab=true \
-                -classpath "${classpath}" \
-                "megamek.MegaMek" \
-                -dedicated \
-                "$@"
-          '';
-        };
-    in {
-        inherit src base check_deps server;
+    src = pkgs.fetchzip {
+        url = "https://github.com/MegaMek/megamek/releases/download/v0.50.06/MegaMek-0.50.06.tar.gz";
+        hash = "sha256-1gPe34RFgHsL+wx9HmqpFHlSKUqFeFYkq1SJQwv4I1Y=";
     };
+    base = pkgs.stdenvNoCC.mkDerivation {
+        pname = "megamek-base";
+        version = "0.50.6";
+        src = src;
+        installPhase = ''
+        mkdir -p $out/mmconf/
+        cp ${escapeShellArgs mmconf} $out/mmconf/
+
+        mkdir -p $out/data/
+        cp -r ${escapeShellArgs data} $out/data/
+
+        mkdir -p $out/lib/
+        cp ${escapeShellArgs libs} $out/lib/
+        '';
+    };
+    default-data = {
+        boards = "${src}/data/boards/";
+        mapgen = "${src}/data/mapgen/";
+        mapsetup = "${src}/data/mapsetup/";
+        mekfiles = "${src}/data/mekfiles/";
+    };
+    classpath = (concatStringsSep ":" (map (path: "${src}/${path}") libs));
+
+    check_deps = pkgs.writeShellApplication {
+        name = "check-megamek-deps";
+
+        text = ''
+        ${jdk}/bin/jdeps \
+            --multi-release base \
+            --missing-deps \
+            -classpath "${classpath}" \
+            "${base}/lib/MegaMek.jar"
+        '';
+    };
+    server = pkgs.writeShellApplication {
+        name = "megamek-server";
+
+        text = ''
+        rm -rf runtime
+        mkdir runtime
+        mkdir runtime/userdata/
+        mkdir runtime/logs/
+        ln -s ${base}/mmconf runtime
+        ln -s ${base}/data runtime
+
+        cd runtime
+        ${jdk}/bin/java \
+            -Xmx4096m \
+            --add-opens "java.base/java.util=ALL-UNNAMED" \
+            --add-opens "java.base/java.util.concurrent=ALL-UNNAMED" \
+            -Dsun.awt.disablegrab=true \
+            -classpath "${classpath}" \
+            "megamek.MegaMek" \
+            -dedicated \
+            "$@"
+        '';
+    };
+in rec {
+    inherit default-data;
+    packages =  { inherit src base check_deps server; };
     apps = {
         check_deps = {
             type = "app";
