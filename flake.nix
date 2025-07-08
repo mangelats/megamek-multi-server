@@ -10,6 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        mm0_49 = import ./servers/0_49.nix { inherit pkgs; };
         mm0_50 = import ./servers/0_50.nix { inherit pkgs; };
         lib = pkgs.lib;
         prefix = prefix: with lib.attrsets; mapAttrs' (name: value: nameValuePair (prefix+"-"+name) value);
@@ -25,8 +26,8 @@
         ];
       in
       {
-        packages = prefix "mm-0_50" mm0_50.packages;
-        apps = prefix "mm-0_50" mm0_50.apps;
+        packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages);
+        apps = (prefix "mm-0_49" mm0_49.apps) // (prefix "mm-0_50" mm0_50.apps);
         devShells.default = pkgs.mkShellNoCC {
           packages = deps ++ [
             pkgs.mypy
