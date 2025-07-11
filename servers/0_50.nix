@@ -3,17 +3,12 @@
     jdk = pkgs.jdk21_headless;
     escapeShellArgs = lib.strings.escapeShellArgs;
     concatStringsSep = lib.strings.concatStringsSep;
+    mapping = target: sources: { inherit target sources; };
 
-    mmconf = [
-        "sentry.properties"
-        "mmconf/log4j2.xml"
-    ];
-    data = [
-        "data/boards"
-        "data/mapgen"
-        "data/mapsetup"
-        "data/mekfiles"
-    ];
+    mmconf = mapping "mmconf" [ "${src}/sentry.properties" "${src}/mmconf/log4j2.xml" ];
+    mechs = mapping "data/mekfiles" [ "${src}/data/mekfiles" ];
+    maps = mapping "data/boards" [ "${src}/data/boards" ];
+
     libs = [
         "lib/MegaMek.jar"
         "lib/jackson-databind-2.18.3.jar"
@@ -54,28 +49,19 @@
         url = "https://github.com/MegaMek/megamek/releases/download/v0.50.06/MegaMek-0.50.06.tar.gz";
         hash = "sha256-1gPe34RFgHsL+wx9HmqpFHlSKUqFeFYkq1SJQwv4I1Y=";
     };
-    base = pkgs.stdenvNoCC.mkDerivation {
-        pname = "megamek-base";
-        version = "0.50.6";
-        src = src;
-        installPhase = ''
-        mkdir -p $out/mmconf/
-        cp ${escapeShellArgs mmconf} $out/mmconf/
-
-        mkdir -p $out/data/
-        cp -r ${escapeShellArgs data} $out/data/
-
-        mkdir -p $out/lib/
-        cp ${escapeShellArgs libs} $out/lib/
-        '';
-    };
-    default-data = {
-        boards = "${src}/data/boards/";
-        mapgen = "${src}/data/mapgen/";
-        mapsetup = "${src}/data/mapsetup/";
-        mekfiles = "${src}/data/mekfiles/";
-    };
     classpath = (concatStringsSep ":" (map (path: "${src}/${path}") libs));
+    process = [
+        "${jdk}/bin/java"
+        "-Xmx4096m"
+        "--add-opens"
+        "java.base/java.util=ALL-UNNAMED"
+        "--add-opens"
+        "java.base/java.util.concurrent=ALL-UNNAMED"
+        "-Dsun.awt.disablegrab=true"
+        "-classpath"
+        "${classpath}"
+        "megamek.MegaMek"
+    ];
 
     check_deps = pkgs.writeShellApplication {
         name = "check-megamek-deps";
@@ -85,45 +71,22 @@
             --multi-release base \
             --missing-deps \
             -classpath "${classpath}" \
-            "${base}/lib/MegaMek.jar"
-        '';
-    };
-    server = pkgs.writeShellApplication {
-        name = "megamek-server";
-
-        text = ''
-        rm -rf runtime
-        mkdir runtime
-        mkdir runtime/userdata/
-        mkdir runtime/logs/
-        ln -s ${base}/mmconf runtime
-        ln -s ${base}/data runtime
-
-        cd runtime
-        ${jdk}/bin/java \
-            -Xmx4096m \
-            --add-opens "java.base/java.util=ALL-UNNAMED" \
-            --add-opens "java.base/java.util.concurrent=ALL-UNNAMED" \
-            -Dsun.awt.disablegrab=true \
-            -classpath "${classpath}" \
-            "megamek.MegaMek" \
-            -dedicated \
-            "$@"
+            "${src}/lib/MegaMek.jar"
         '';
     };
 in rec {
-    inherit default-data;
-    packages =  { inherit src base check_deps server; };
+    packages =  { inherit src check_deps; };
     apps = {
         check_deps = {
             type = "app";
             program = "${packages.check_deps}/bin/check-megamek-deps";
-            meta.description = "Run Blender, a free and open-source 3D creation suite.";
+            meta.description = "Check dependencies linked";
         };
-        server = {
-            type = "app";
-            program = "${packages.server}/bin/megamek-server";
-            meta.description = "Run Blender, a free and open-source 3D creation suite.";
-        };
+    };
+    config = {
+        inherit process;
+        mmconf = [ mmconf ];
+        mechs = [ mechs ];
+        maps = [ maps ];
     };
 }
