@@ -1,54 +1,14 @@
-from pathlib import Path
-import aiofiles
-import asyncio
-import json
-import os
-import sys
-from aiofiles.tempfile import TemporaryDirectory
-from pprint import pprint
+from quart import Quart
+from quart_auth import QuartAuth
 
-from .server import MegaMekServer, ServerConfig
-from .orchestrator import Orchestrator, Selection, OrchestratorConfig
+app = Quart("megameck-multi-server")
+app.secret_key = "868051d50a154c19d7f284e74012056cbe957e045658df388c4554d85d57a8a6"
 
-async def main():
-    config_file = sys.argv[1] or os.environ['MEGAMEK_MULTI_SERVER_CONFIG'] or './config.json'
-    async with aiofiles.open(config_file, mode='r') as f:
-        s: str = await f.read()
-        config = json.loads(s)
-        async with TemporaryDirectory() as temp_dir:
-            server_configs = OrchestratorConfig(options=config["available_configs"])
-            orchestrator = Orchestrator(Path(temp_dir), server_configs)
+QuartAuth(app)
 
-            servers = await asyncio.gather(
-                orchestrator.start_server(Selection(
-                    version="0.49",
-                    mmconf="default",
-                    mechs="default",
-                    maps="default",
-                )),
-                orchestrator.start_server(Selection(
-                    version="0.50",
-                    mmconf="default",
-                    mechs="default",
-                    maps="default",
-                )),
-            )
-            try:
-                while True:
-                    for s in servers:
-                        info = orchestrator.get_server_info(s)
-                        print(info)
-                    await asyncio.sleep(1)
-            except asyncio.CancelledError:
-                await asyncio.gather(*(orchestrator.stop_server(s) for s in servers))
 
-def _simple_config(config) -> ServerConfig:
-    return ServerConfig(
-        process_args=config['process'],
-        mmconf=config['mmconf'][0],
-        mechs=config['mechs'][0],
-        maps=config['maps'][0],
-    )
+@app.route('/')
+async def hello():
+    return 'hello'
 
-if __name__ == "__main__":
-    asyncio.run(main())
+app.run()
