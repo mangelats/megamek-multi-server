@@ -15,16 +15,21 @@
         lib = pkgs.lib;
         prefix = prefix: with lib.attrsets; mapAttrs' (name: value: nameValuePair (prefix+"-"+name) value);
 
-        py = (pkgs.python3.withPackages (ps: [
+        python3 = pkgs.python3.override {
+          self = python3;
+          packageOverrides = pyfinal: pyprev: {
+            quart-auth = pyfinal.callPackage ./quart-auth.nix { };
+          };
+        };
+        py = (python3.withPackages (ps: [
           # Base
           ps.pydantic
           ps.aiofiles
           ps.aioshutil
 
-          ps.flask
-          ps.flask_login
-          ]
-        ));
+          ps.quart
+          ps.quart-auth
+        ]));
 
         config = {
           base_path = "";
@@ -43,7 +48,7 @@
         };
       in
       {
-        packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages) // { inherit dev; };
+        packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages) // { inherit dev py; };
         apps = (prefix "mm-0_49" mm0_49.apps) // (prefix "mm-0_50" mm0_50.apps) // {
           dev = {
             type = "app";
