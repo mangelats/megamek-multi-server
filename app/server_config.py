@@ -1,3 +1,4 @@
+from typing import Optional
 from aiofiles.os import symlink, makedirs
 from aiofiles.ospath import isdir
 from os.path import basename, dirname
@@ -9,7 +10,6 @@ ProcessArgs = list[str]
 
 class Mapping(BaseModel):
     """From somewhere to somewhere"""
-    model_config = ConfigDict(strict=True)
     sources: list[str]
     target: str
 
@@ -34,7 +34,6 @@ async def ensure_path(path):
 
 class ServerConfig(BaseModel):
     """Definition on how to create a server"""
-    model_config = ConfigDict(strict=True)
     process_args: ProcessArgs
     mmconf: Mapping
     mechs: Mapping

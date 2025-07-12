@@ -85,8 +85,9 @@ in rec {
     };
     config = {
         inherit process;
-        mmconf = [ mmconf ];
-        mechs = [ mechs ];
-        maps = [ maps ];
+        mm_version = "0.50.06";
+        mmconf = { default = mmconf; };
+        mechs = { default = mechs; };
+        maps = { default = maps; };
     };
 }

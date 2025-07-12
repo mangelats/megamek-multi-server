@@ -13,14 +13,23 @@ from .server_config import Mapping, ProcessArgs, ServerConfig
 
 class MegaMekServer:
     _uuid: UUID
+    _mm_version: str
     _port: int
     _state: 'ServerState'
     _path: Path
     _proc: Optional[Process]
 
     @property
-    def uuid(self) -> UUID:
+    def id(self) -> UUID:
         return self._uuid
+    
+    @property
+    def mm_version(self) -> str:
+        return self._mm_version
+    
+    @property
+    def port(self) -> int:
+        return self._port
     
     @property
     def state(self) -> 'ServerState':
@@ -29,13 +38,14 @@ class MegaMekServer:
         return self._state
 
     @staticmethod
-    async def start(base: Path, config: ServerConfig, port: int) -> 'MegaMekServer':
+    async def start(mm_version: str, base: Path, config: ServerConfig, port: int) -> 'MegaMekServer':
         uuid = uuid4()
         path = base / str(uuid)
         print("Starting server at", path)
 
         server = MegaMekServer()
         server._uuid=uuid
+        server._mm_version=mm_version
         server._port=port
         server._state=ServerState.fresh
         server._path=path
@@ -49,25 +59,25 @@ class MegaMekServer:
         if self._state != ServerState.fresh:
             raise RuntimeError('Trying to start server where the state is not fresh')
         
-        await self._set_state(ServerState.setting_up)
+        self._set_state(ServerState.setting_up)
         await self._set_up(config.mmconf, config.mechs, config.maps)
-        await self._set_state(ServerState.spawning)
+        self._set_state(ServerState.spawning)
         await self._spawn(config.process_args)
-        await self._set_state(ServerState.running)
+        self._set_state(ServerState.running)
     
     async def stop(self):
         """Starts the server with some config."""
         if self._state != ServerState.running:
             raise RuntimeError('Trying to stop server that\'s not running')
         
-        await self._set_state(ServerState.stopping)
+        self._set_state(ServerState.stopping)
         await self._stop()
-        await self._set_state(ServerState.cleaning_up)
+        self._set_state(ServerState.cleaning_up)
         await self._clean_up()
-        await self._set_state(ServerState.dead)
+        self._set_state(ServerState.dead)
 
     
-    async def _set_state(self, state: 'ServerState'):
+    def _set_state(self, state: 'ServerState'):
         self._state = state
 
     async def _set_up(self, mmconf: Mapping, mechs: Mapping, maps: Mapping):

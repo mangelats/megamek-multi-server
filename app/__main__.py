@@ -8,6 +8,7 @@ from aiofiles.tempfile import TemporaryDirectory
 from pprint import pprint
 
 from .server import MegaMekServer, ServerConfig
+from .orchestrator import Orchestrator, Selection, OrchestratorConfig
 
 async def main():
     config_file = sys.argv[1] or os.environ['MEGAMEK_MULTI_SERVER_CONFIG'] or './config.json'
@@ -15,28 +16,31 @@ async def main():
         s: str = await f.read()
         config = json.loads(s)
         async with TemporaryDirectory() as temp_dir:
-            temp_dir = Path(temp_dir)
-            available_configs = config["available_configs"]
+            server_configs = OrchestratorConfig(options=config["available_configs"])
+            orchestrator = Orchestrator(Path(temp_dir), server_configs)
 
             servers = await asyncio.gather(
-                MegaMekServer.start(
-                    temp_dir,
-                    _simple_config(available_configs["0.49"]),
-                    2349,
-                ),
-                MegaMekServer.start(
-                    temp_dir,
-                    _simple_config(available_configs["0.50"]),
-                    2350,
-                ),
+                orchestrator.start_server(Selection(
+                    version="0.49",
+                    mmconf="default",
+                    mechs="default",
+                    maps="default",
+                )),
+                orchestrator.start_server(Selection(
+                    version="0.50",
+                    mmconf="default",
+                    mechs="default",
+                    maps="default",
+                )),
             )
             try:
                 while True:
-                    print('Server 0 state', servers[0].state)
-                    print('Server 1 state', servers[1].state)
+                    for s in servers:
+                        info = orchestrator.get_server_info(s)
+                        print(info)
                     await asyncio.sleep(1)
             except asyncio.CancelledError:
-                await asyncio.gather(*(s.stop() for s in servers))
+                await asyncio.gather(*(orchestrator.stop_server(s) for s in servers))
 
 def _simple_config(config) -> ServerConfig:
     return ServerConfig(
