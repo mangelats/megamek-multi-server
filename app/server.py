@@ -89,12 +89,14 @@ class MegaMekServer:
 
     async def _stop(self):
         try:
-            # Attempt to terminate it gracefully (10 seconds timeout)
+            print("Attempting to terminate it gracefully (within 10 seconds)")
             async with asyncio.timeout(10):
-                await self._proc.terminate()
+                self._proc.terminate()
+                await self._proc.wait()
         except TimeoutError:
-            # Forcefully kill it
-            await self._proc.kill()
+            print("Forcefully kill it")
+            self._proc.kill()
+            await self._proc.wait()
         self._proc = None
 
     async def _clean_up(self):
