@@ -1,9 +1,8 @@
-from typing import Optional
 from aiofiles.os import symlink, makedirs
 from aiofiles.ospath import isdir
 from os.path import basename, dirname
 from pathlib import Path
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 ProcessArgs = list[str]
@@ -13,7 +12,7 @@ class Mapping(BaseModel):
     sources: list[str]
     target: str
 
-    async def apply(self, base: Path):
+    async def apply(self, base: Path) -> None:
         dest = base / self.target
         if len(self.sources) == 1 and await isdir(self.sources[0]):
             parent = dirname(dest)
@@ -26,7 +25,7 @@ class Mapping(BaseModel):
                 is_dir = await isdir(src)
                 await symlink(src, link_dest, target_is_directory=is_dir)
 
-async def ensure_path(path):
+async def ensure_path(path) -> None:
     try:
         await makedirs(path, mode=511)
     except FileExistsError:

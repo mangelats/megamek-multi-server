@@ -43,7 +43,8 @@
           name = "megamech-multi-server-dev";
 
           text = ''
-           ${py}/bin/python -m app ${config_file}
+            cd ./src
+            ${py}/bin/python -m megamek-multi-server ${config_file}
           '';
         };
       in
