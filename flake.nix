@@ -40,14 +40,18 @@
             "0.50" = mm0_50.config;
           };
         };
-        config_file = pkgs.writeText "config.json" ( builtins.toJSON config);
+        config-file = pkgs.writeText "config.json" ( builtins.toJSON config);
+        dev-passwords = pkgs.writeText "passwords.txt" ''
+          test scrypt:32768:8:1$lWV55EaDMutmo8c7$aa5600942ddcda2ae2e1dedfad51618336fa7314b931b920e3fd680d5b3b9f98973b1f8b1761a60d5d560afc1da57b7c615d82b75c44cfc552c1e254e0290e56
+        '';
         dev = pkgs.writeShellApplication {
           name = "megamech-multi-server-dev";
 
           text = ''
             cd ./src
-            export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
-            ${py}/bin/python -m megamek_multi_server ${config_file}
+            export MEGAMEK_MULTI_SERVER_CONFIG="${config-file}"
+            export MEGAMEK_MULTI_SERVER_PASSWORDS="${dev-passwords}"
+            ${py}/bin/python -m megamek_multi_server
           '';
         };
         package = pkgs.python3Packages.buildPythonPackage rec {
@@ -69,7 +73,7 @@
           name = "megamech-multi-server";
 
           text = ''
-            export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
+            export MEGAMEK_MULTI_SERVER_CONFIG="${config-file}"
             ${prod-python}/bin/hypercorn megamek_multi_server:app
           '';
         };

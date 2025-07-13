@@ -1,8 +1,6 @@
 import os
 import stat
 
-PWDS_PATH = "secrets/passwords.txt"
-
 _Signature = tuple[int, int, float]
 _cache: tuple[_Signature, dict[str, str]] | None = None
 
@@ -14,13 +12,14 @@ def hashed_password(username: str) -> str | None:
 
 def _hashed_passwords() -> dict[str, str]:
     global _cache
+    pwds_path = os.environ["MEGAMEK_MULTI_SERVER_PASSWORDS"]
 
-    sig = _signature(PWDS_PATH)
+    sig = _signature(pwds_path)
     if _cache is not None and _cache[0] == sig:
         return _cache[1]
 
     value = {}
-    with open(PWDS_PATH, "r") as file:
+    with open(pwds_path, "r") as file:
         for line in file:
             [username, hashed_password] = line.rstrip().split(" ", 1)
             value[username] = hashed_password
