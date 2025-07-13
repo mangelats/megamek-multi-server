@@ -1,6 +1,9 @@
 from uuid import UUID
+
 from pydantic import BaseModel
+
 from .server import MegaMekServer, ServerState
+
 
 class ServerInfo(BaseModel):
     id: UUID

@@ -1,18 +1,17 @@
-from enum import Enum
-from aiofiles.tempfile import TemporaryDirectory
-from collections.abc import AsyncGenerator
-from pathlib import Path
-from pydantic import BaseModel, RootModel
-from quart import current_app
-from typing import Optional
 import json
 import os
+from collections.abc import AsyncGenerator
+from enum import Enum
+from pathlib import Path
+from typing import Optional
 
 import aiofiles
-from quart import Quart
+from aiofiles.tempfile import TemporaryDirectory
+from pydantic import BaseModel, RootModel
+from quart import current_app, Quart
 
-from .conductor import Conductor, ConductorConfig, Version
 from .commands import Command, CreateServer, DestroyServer
+from .conductor import Conductor, ConductorConfig, Version
 from .events import Event
 
 _EXT_CODE = "QUART_MEGA_MECH"

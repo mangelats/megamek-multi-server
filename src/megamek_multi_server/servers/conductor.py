@@ -1,15 +1,16 @@
+import asyncio
 from asyncio import Queue
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Iterable
 from uuid import UUID
-from pydantic import BaseModel, RootModel
-import asyncio
 
+from pydantic import BaseModel, RootModel
+
+from .events import Event, ServerAdded, ServerRemoved, ServersSet, ServerStateChanged
 from .server import MegaMekServer, ServerState
+from .server_config import Mapping, ProcessArgs, ServerConfig
 from .server_info import ServerInfo
-from .server_config import ProcessArgs, Mapping, ServerConfig
-from .events import Event, ServerAdded, ServerRemoved, ServerStateChanged, ServersSet
 
 Version = str
 

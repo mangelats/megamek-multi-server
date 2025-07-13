@@ -3,7 +3,9 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
 from .conductor import OptionSelection
+
 
 class CommandType(str, Enum):
     create_server='create_server'

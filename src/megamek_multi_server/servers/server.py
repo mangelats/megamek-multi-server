@@ -1,15 +1,14 @@
-import aioshutil
 import asyncio
-
-from aiofiles.os import makedirs
 from asyncio.subprocess import Process
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional
 from uuid import UUID, uuid4
 
-from .server_config import Mapping, ProcessArgs, ServerConfig
+import aioshutil
+from aiofiles.os import makedirs
 
+from .server_config import Mapping, ProcessArgs, ServerConfig
 
 StateChanged = Callable[[UUID, 'ServerState'], None]
 

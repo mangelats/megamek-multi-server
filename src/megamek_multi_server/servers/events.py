@@ -2,10 +2,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, Literal, Union
 from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from .server import ServerState
 from .server_info import ServerInfo
+
 
 class EventType(str, Enum):
     servers_set='servers_set'

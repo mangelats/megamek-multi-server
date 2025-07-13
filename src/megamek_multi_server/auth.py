@@ -1,6 +1,8 @@
 from typing import Optional
+
 from quart_auth import AuthUser, login_user, logout_user
 from werkzeug.security import check_password_hash
+
 from .pwd_file import hashed_password
 
 

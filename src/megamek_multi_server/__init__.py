@@ -1,9 +1,11 @@
 import asyncio
 import logging
 from typing import cast
+
 from pydantic import RootModel
 from quart import Quart, redirect, render_template, request, session, url_for, websocket
-from quart_auth import QuartAuth, Unauthorized, current_user, login_required
+from quart_auth import current_user, login_required, QuartAuth, Unauthorized
+
 from . import auth
 from .servers import Command, Event
 from .servers.extension import QuartMegaMek

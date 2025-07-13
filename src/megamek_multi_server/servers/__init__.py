@@ -1,5 +1,4 @@
-from . import conductor, events, extension, server_config, server
-
+from . import conductor, events, extension, server, server_config
 from .commands import Command
 from .events import Event
 
