@@ -21,7 +21,8 @@
             quart-auth = pyfinal.callPackage ./quart-auth.nix { };
           };
         };
-        py = (python3.withPackages (ps: [
+        
+        deps = (ps: [
           # Base
           ps.pydantic
           ps.aiofiles
@@ -30,7 +31,8 @@
           ps.quart
           ps.quart-auth
           ps.hypercorn
-        ]));
+        ]);
+        py = (python3.withPackages deps);
 
         config = {
           base_path = "";
@@ -49,13 +51,24 @@
             ${py}/bin/python -m megamek_multi_server ${config_file}
           '';
         };
+        package = pkgs.python3Packages.buildPythonPackage rec {
+          pname = "megamek_multi_server";
+          version = "0.1";
+          src = ./.;
+          propagatedBuildInputs = [ py ];
+          
+          pyproject = true;
+          build-system = [
+            pkgs.python3Packages.pdm-backend
+          ];
+        };
+        prod-python = python3.withPackages (p: (deps p) ++ [ package ]);
         prod = pkgs.writeShellApplication {
           name = "megamech-multi-server";
 
           text = ''
-            cd ./src
             export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
-            ${py}/bin/hypercorn megamek_multi_server:app
+            ${prod-python}/bin/hypercorn megamek_multi_server:app
           '';
         };
         prod-app = {
@@ -67,7 +80,7 @@
       {
         packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages) // {
           inherit dev prod py;
-          default = prod;
+          default = package;
         };
         apps = (prefix "mm-0_49" mm0_49.apps) // (prefix "mm-0_50" mm0_50.apps) // {
           dev = {
@@ -82,6 +95,8 @@
           packages = [
             py
             pkgs.mypy
+            pkgs.isort
+            pkgs.black
           ];
         };
       }
