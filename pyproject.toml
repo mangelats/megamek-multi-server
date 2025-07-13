@@ -10,7 +10,6 @@ license = "AGPL-3.0-only"
 dependencies = [
     "quart >= 0.20",
     "quart-auth >= 0.11.0",
-    "Hypercorn >= 0.17.3",
     "pydantic >= 2.11",
     "aiofiles >= 24.1.0",
     "aioshutil >= 1.5",

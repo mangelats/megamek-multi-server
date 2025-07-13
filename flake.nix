@@ -30,7 +30,6 @@
 
           ps.quart
           ps.quart-auth
-          ps.hypercorn
         ]);
         py = (python3.withPackages deps);
 
@@ -62,7 +61,10 @@
             pkgs.python3Packages.pdm-backend
           ];
         };
-        prod-python = python3.withPackages (p: (deps p) ++ [ package ]);
+        prod-python = python3.withPackages (p: (deps p) ++ [
+          package
+          p.hypercorn
+        ]);
         prod = pkgs.writeShellApplication {
           name = "megamech-multi-server";
 
