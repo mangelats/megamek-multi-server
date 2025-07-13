@@ -8,12 +8,13 @@ from . import auth
 from .servers import Command, Event
 from .servers.extension import QuartMegaMek
 
+__all__ = [ 'app' ]
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 app = Quart(__name__)
 app.secret_key = "868051d50a154c19d7f284e74012056cbe957e045658df388c4554d85d57a8a6"
-app.config['TEMPLATES_AUTO_RELOAD'] = True
 QuartAuth(app)
 QuartMegaMek(app)
 
@@ -42,7 +43,6 @@ async def ws() -> None:
         await task
 
 async def _commands() -> None:
-    print("_commands")
     while True:
         try:
             message = await websocket.receive()

@@ -29,6 +29,7 @@
 
           ps.quart
           ps.quart-auth
+          ps.hypercorn
         ]));
 
         config = {
@@ -44,18 +45,38 @@
 
           text = ''
             cd ./src
+            export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
             ${py}/bin/python -m megamek-multi-server ${config_file}
           '';
         };
+        prod = pkgs.writeShellApplication {
+          name = "megamech-multi-server";
+
+          text = ''
+            cd ./src
+            export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
+            ${py}/bin/hypercorn megamek-multi-server:app
+          '';
+        };
+        prod-app = {
+          type = "app";
+            program = "${prod}/bin/megamech-multi-server";
+            meta.description = "MegaMek multi-server";
+        };
       in
       {
-        packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages) // { inherit dev py; };
+        packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages) // {
+          inherit dev prod py;
+          default = prod;
+        };
         apps = (prefix "mm-0_49" mm0_49.apps) // (prefix "mm-0_50" mm0_50.apps) // {
           dev = {
             type = "app";
             program = "${dev}/bin/megamech-multi-server-dev";
             meta.description = "Run app in development mode.";
           };
+          prod = prod-app;
+          default = prod-app;
         };
         devShells.default = pkgs.mkShellNoCC {
           packages = [
