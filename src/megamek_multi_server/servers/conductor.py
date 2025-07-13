@@ -14,25 +14,26 @@ from .server_info import ServerInfo
 
 Version = str
 
+
 class Conductor:
-    _config: 'ConductorConfig'
+    _config: "ConductorConfig"
     base_path: Path
     _servers: dict[UUID, MegaMekServer]
     _aquired_ports: set[int]
     _queues: set[Queue[Event]]
 
-    def __init__(self, base_path: Path, config: 'ConductorConfig') -> None:
+    def __init__(self, base_path: Path, config: "ConductorConfig") -> None:
         self.base_path = base_path
         self._config = config
         self._servers = {}
         self._aquired_ports = set()
         self._queues = set()
-    
+
     @property
-    def config(self) -> 'ConductorConfig':
+    def config(self) -> "ConductorConfig":
         return self._config
 
-    async def start_server(self, selection: 'OptionSelection') -> UUID:
+    async def start_server(self, selection: "OptionSelection") -> UUID:
         options = self._config[selection.version]
         config = ServerConfig(
             process_args=options.process,
@@ -43,11 +44,7 @@ class Conductor:
         port = self._aquire_port()
         try:
             server = MegaMekServer(
-                options.mm_version,
-                self.base_path,
-                config,
-                port,
-                state_changed=self._state_changed
+                options.mm_version, self.base_path, config, port, state_changed=self._state_changed
             )
             self._broadcast_event(ServerAdded(info=ServerInfo.from_server(server)))
             self._servers[server.id] = server
@@ -56,7 +53,7 @@ class Conductor:
         except Exception as e:
             self._aquired_ports.remove(port)
             raise e
-        
+
     async def stop_all_servers(self) -> None:
         servers = self._servers
         self._servers = {}
@@ -72,11 +69,11 @@ class Conductor:
             del self._servers[server_id]
             self._aquired_ports.remove(port)
             self._broadcast_event(ServerRemoved(id=server_id))
-    
-    def all_servers_info(self) -> list['ServerInfo']:
+
+    def all_servers_info(self) -> list["ServerInfo"]:
         return [ServerInfo.from_server(server) for server in self._servers.values()]
 
-    def server_info(self, server_id: UUID) -> 'ServerInfo':
+    def server_info(self, server_id: UUID) -> "ServerInfo":
         server = self._servers[server_id]
         return ServerInfo.from_server(server)
 
@@ -85,8 +82,8 @@ class Conductor:
             if i not in self._aquired_ports:
                 self._aquired_ports.add(i)
                 return i
-        raise Exception('All ports are full (WTF happened?)')
-    
+        raise Exception("All ports are full (WTF happened?)")
+
     async def events(self) -> AsyncGenerator[Event, None]:
         queue: Queue[Event] = Queue()
         self._queues.add(queue)
@@ -108,33 +105,37 @@ class Conductor:
 
 
 class ConductorConfig(RootModel):
-    root: dict[Version, 'Options']
-    
-    def items(self) -> Iterable[tuple[Version, 'Options']]:
+    root: dict[Version, "Options"]
+
+    def items(self) -> Iterable[tuple[Version, "Options"]]:
         return self.root.items()
-    
+
     def keys(self) -> Iterable[Version]:
         return self.root.keys()
-    
-    def values(self) -> Iterable['Options']:
+
+    def values(self) -> Iterable["Options"]:
         return self.root.values()
 
-    def __getitem__(self, item: Version) -> 'Options':
+    def __getitem__(self, item: Version) -> "Options":
         return self.root[item]
+
 
 class Options(BaseModel):
     """
     Definition of available options
     (combine different options to make a valid ServerConfig)
     """
+
     process: ProcessArgs
     mm_version: str
     mmconf: dict[str, Mapping]
     mechs: dict[str, Mapping]
     maps: dict[str, Mapping]
 
+
 class OptionSelection(BaseModel):
     """Information that defined what option is used."""
+
     version: Version
     mmconf: str
     mechs: str

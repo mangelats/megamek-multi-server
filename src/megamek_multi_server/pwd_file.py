@@ -11,13 +11,14 @@ def hashed_password(username: str) -> str | None:
     assert username, "Invalid username!"
     return _hashed_passwords().get(username)
 
+
 def _hashed_passwords() -> dict[str, str]:
     global _cache
 
     sig = _signature(PWDS_PATH)
     if _cache is not None and _cache[0] == sig:
         return _cache[1]
-    
+
     value = {}
     with open(PWDS_PATH, "r") as file:
         for line in file:
@@ -25,6 +26,7 @@ def _hashed_passwords() -> dict[str, str]:
             value[username] = hashed_password
     _cache = (sig, value)
     return value
+
 
 def _signature(path: str) -> _Signature:
     """Computes a unique signature for a path state."""

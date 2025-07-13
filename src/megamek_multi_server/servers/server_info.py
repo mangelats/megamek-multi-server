@@ -12,7 +12,7 @@ class ServerInfo(BaseModel):
     state: ServerState
 
     @staticmethod
-    def from_server(server: MegaMekServer) -> 'ServerInfo':
+    def from_server(server: MegaMekServer) -> "ServerInfo":
         return ServerInfo(
             id=server.id,
             mm_version=server.mm_version,

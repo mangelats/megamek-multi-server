@@ -3,11 +3,11 @@ from .commands import Command
 from .events import Event
 
 __all__ = [
-    'conductor',
-    'events',
-    'extension',
-    'server_config',
-    'server',
-    'Command',
-    'Event',
+    "conductor",
+    "events",
+    "extension",
+    "server_config",
+    "server",
+    "Command",
+    "Event",
 ]

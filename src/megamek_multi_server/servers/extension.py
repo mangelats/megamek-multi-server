@@ -16,10 +16,12 @@ from .events import Event
 
 _EXT_CODE = "QUART_MEGA_MECH"
 
+
 class _ConductorState(str, Enum):
-    ready='ready'
-    starting='starting'
-    closed='closed'
+    ready = "ready"
+    starting = "starting"
+    closed = "closed"
+
 
 class QuartMegaMek:
     _conductor: Conductor | _ConductorState
@@ -28,7 +30,7 @@ class QuartMegaMek:
         self._conductor = _ConductorState.ready
         if app is not None:
             self.init_app(app)
-    
+
     def init_app(self, app: Quart) -> None:
         if _EXT_CODE in app.extensions:
             raise Exception("MegaMech extension has already been initialized")
@@ -41,8 +43,8 @@ class QuartMegaMek:
             raise Exception("A conductor is already working")
 
     async def _run_conductor(self) -> AsyncGenerator[None, None]:
-        config_file = os.environ['MEGAMEK_MULTI_SERVER_CONFIG']
-        async with aiofiles.open(config_file, mode='r') as f:
+        config_file = os.environ["MEGAMEK_MULTI_SERVER_CONFIG"]
+        async with aiofiles.open(config_file, mode="r") as f:
             s: str = await f.read()
             config = json.loads(s)
             async with TemporaryDirectory() as temp_dir:
@@ -53,18 +55,18 @@ class QuartMegaMek:
                 self._conductor = _ConductorState.closed
 
     @staticmethod
-    def current() -> 'QuartMegaMek':
+    def current() -> "QuartMegaMek":
         return current_app.extensions[_EXT_CODE]
 
     @staticmethod
     def _current_conductor() -> Conductor:
         conductor = QuartMegaMek.current()._conductor
         if isinstance(conductor, _ConductorState):
-            raise Exception('The conductor is not available')
+            raise Exception("The conductor is not available")
         return conductor
 
     @staticmethod
-    def config_options() -> 'ConfigOptions':
+    def config_options() -> "ConfigOptions":
         result: dict[Version, ConfigVersionOption] = {}
         for k, v in QuartMegaMek._current_conductor().config.items():
             result[k] = ConfigVersionOption(
@@ -74,11 +76,11 @@ class QuartMegaMek:
                 maps=list(v.maps.keys()),
             )
         return ConfigOptions(result)
-        
+
     @staticmethod
     def events() -> AsyncGenerator[Event, None]:
         return QuartMegaMek._current_conductor().events()
-    
+
     @staticmethod
     async def apply_command(command: Command) -> None:
         if isinstance(command, CreateServer):
@@ -92,5 +94,6 @@ class ConfigVersionOption(BaseModel):
     mmconf: list[str]
     mechs: list[str]
     maps: list[str]
+
 
 ConfigOptions = RootModel[dict[Version, ConfigVersionOption]]

@@ -12,10 +12,11 @@ def login(username: str, password: str) -> Optional[AuthUser]:
         return None
     if not check_password_hash(password_hash, password):
         return None
-    
+
     user = AuthUser(username)
     login_user(user)
     return user
+
 
 def logout() -> None:
     logout_user()

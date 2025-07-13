@@ -7,8 +7,10 @@ from pydantic import BaseModel
 
 ProcessArgs = list[str]
 
+
 class Mapping(BaseModel):
     """From somewhere to somewhere"""
+
     sources: list[str]
     target: str
 
@@ -25,17 +27,18 @@ class Mapping(BaseModel):
                 is_dir = await isdir(src)
                 await symlink(src, link_dest, target_is_directory=is_dir)
 
+
 async def ensure_path(path) -> None:
     try:
         await makedirs(path, mode=511)
     except FileExistsError:
         pass
 
+
 class ServerConfig(BaseModel):
     """Definition on how to create a server"""
+
     process_args: ProcessArgs
     mmconf: Mapping
     mechs: Mapping
     maps: Mapping
-
-    

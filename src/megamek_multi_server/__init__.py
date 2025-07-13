@@ -10,7 +10,7 @@ from . import auth
 from .servers import Command, Event
 from .servers.extension import QuartMegaMek
 
-__all__ = [ 'app' ]
+__all__ = ["app"]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,15 +20,17 @@ app.secret_key = "868051d50a154c19d7f284e74012056cbe957e045658df388c4554d85d57a8
 QuartAuth(app)
 QuartMegaMek(app)
 
-@app.route('/')
+
+@app.route("/")
 @login_required
 async def index():
-    config_options=QuartMegaMek.config_options().model_dump()
+    config_options = QuartMegaMek.config_options().model_dump()
     return await render_template(
         "index.html",
         name=current_user.auth_id,
         config_options=config_options,
     )
+
 
 @app.websocket("/ws")
 @login_required
@@ -44,6 +46,7 @@ async def ws() -> None:
         task.cancel()
         await task
 
+
 async def _commands() -> None:
     while True:
         try:
@@ -57,28 +60,30 @@ async def _commands() -> None:
             raise e
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["GET", "POST"])
 async def login():
     error = None
-    next = session.get('next')
-    if request.method == 'POST':
+    next = session.get("next")
+    if request.method == "POST":
         form = await request.form
-        username = form['username']
-        password = form['password']
+        username = form["username"]
+        password = form["password"]
         if user := auth.login(username, password):
             if next:
-                del session['next']
-            return redirect(next or '/')
+                del session["next"]
+            return redirect(next or "/")
         else:
             error = "Usuari o contrasenya incorrecte"
 
     return await render_template("login.html", error=error)
 
+
 @app.errorhandler(Unauthorized)
 async def redirect_to_login(*_):
     return redirect(url_for("login"))
 
-@app.route('/logout')
+
+@app.route("/logout")
 async def logout():
     auth.logout()
-    return redirect('/')
+    return redirect("/")
