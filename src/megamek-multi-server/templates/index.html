@@ -5,15 +5,187 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hola</title>
     <script type="text/javascript" async defer>
-        const ws = new WebSocket(`ws://${location.host}/ws`);
+        document.addEventListener('DOMContentLoaded', () => {
+            for (const server of document.querySelectorAll('.create')) {
+                const version = server.getAttribute('data-version')
 
-        ws.addEventListener('message', function (event) {
-            console.log(event.data)
+                const open = server.querySelector('.open')
+                const dialog = server.querySelector('dialog');
+                const close = server.querySelector('.close');
+                const form = server.querySelector('form')
+
+                open.addEventListener('click', () => dialog.show())
+                close.addEventListener('click', () => dialog.close())
+
+                form.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    data = new FormData(form)
+                    dialog.close();
+                    create(version, data.get('mmconf'), data.get('mechs'), data.get('maps'));
+                });
+
+            }
+
+        })
+
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        ws.addEventListener('message', function (e) {
+            const event = JSON.parse(e.data)
+            if (event.event_type === 'servers_set') {
+                serversSet(event.servers)
+            } else if (event.event_type === 'server_added') {
+                serverAdded(event.info)
+            } else if (event.event_type === 'server_state_changed') {
+                serverStateChanged(event.id, event.new_state)
+            } else if (event.event_type === 'server_removed') {
+                serverRemoved(event.id)
+            } else {
+                console.warn("Unknown event", event)
+            }
         });
+        function create(version, mmconf, mechs, maps) {
+            const message = {
+                cmd_type: 'create_server',
+                options: { version, mmconf, mechs, maps },
+            }
+            const event = JSON.stringify(message)
+            ws.send(event)
+        }
+        function destroy(id) {
+            const message = {
+                cmd_type: 'destroy_server',
+                id,
+            }
+            const event = JSON.stringify(message)
+            ws.send(event)
+        }
+
+        function serversSet(servers) {
+            for (const info of servers) {
+                serverAdded(info)
+            }
+        }
+
+        function serverAdded(info) {
+            const hostname = window.location.hostname;
+
+            const el = document.createElement('div')
+            el.classList.add('server')
+            el.id = info.id
+            const ul = document.createElement('ul')
+            el.appendChild(ul)
+            {
+                const li = document.createElement('li')
+                li.appendChild(document.createTextNode('Identificador unic: '))
+                const data = document.createElement('data')
+                data.value = info.id
+                data.textContent = info.id
+                li.appendChild(data)
+                ul.appendChild(li)
+            }
+            {
+                const li = document.createElement('li')
+                li.appendChild(document.createTextNode('Host: '))
+                const data = document.createElement('data')
+                data.value = hostname
+                data.textContent = hostname
+                li.appendChild(data)
+                ul.appendChild(li)
+            }
+            {
+                const li = document.createElement('li')
+                li.appendChild(document.createTextNode('Port: '))
+                const data = document.createElement('data')
+                data.value = info.port.toString()
+                data.textContent = info.port.toString()
+                li.appendChild(data)
+                ul.appendChild(li)
+            }
+            {
+                const li = document.createElement('li')
+                li.appendChild(document.createTextNode('Versió de MegaMek: '))
+                const data = document.createElement('data')
+                data.value = info.mm_version
+                data.textContent = info.mm_version
+                li.appendChild(data)
+                ul.appendChild(li)
+            }
+            {
+                const li = document.createElement('li')
+                li.appendChild(document.createTextNode('Estat: '))
+                li.classList.add('state')
+                const data = document.createElement('data')
+                data.value = info.state
+                data.textContent = info.state
+                li.appendChild(data)
+                ul.appendChild(li)
+            }
+
+            const btn = document.createElement('button')
+            btn.textContent = 'Destruiex-lo'
+            btn.addEventListener('click', () => destroy(info.id))
+            el.appendChild(btn)
+
+            const servers = document.querySelector(".servers");
+            servers.insertBefore(el, servers.querySelector('.create'))
+        }
+
+        function serverStateChanged(id, new_state) {
+            const data = document.getElementById(id).querySelector('.state > data')
+            data.value = new_state
+            data.textContent = new_state
+        }
+
+        function serverRemoved(id) {
+            document.getElementById(id).remove()
+        }
     </script>
+    <style>
+        html { margin: 0; padding: 0; }
+        body { margin: 0; padding: 10ch; }
+
+        .servers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(15ch, 30ch));
+            gap: 2rem;
+        }
+        .servers > * {
+            height: 15rem;
+        }
+    </style>
 </head>
 <body>
-    <p><a href="/logout">Desconnecta'm</a></p>
-    <h1>Hola, {{name}}!</h1>
+    <p>Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></p>
+    <div class="servers">
+        {% for version, options in config_options|items %}
+            <div class="create" data-version="{{ version }}">
+                <button class="open">Crea servidor per a MegaMek {{ version }}</button>
+                <dialog closedby="any">
+                    <h2>Crea servidor per a MegaMek {{ version }}</h2>
+                    <form id="{{version}}-form">
+                        <ul>
+                            <li>Versió exacte: {{ options.mm_version }}</li>
+                            <li>Configuració general: <select name="mmconf">
+                                {% for value in options.mmconf %}
+                                    <option value="{{value}}">{{value}}</option>
+                                {% endfor %}
+                            </select></li>
+                            <li>Llista de mechs disponibles: <select name="mechs">
+                                {% for value in options.mechs %}
+                                    <option value="{{value}}">{{value}}</option>
+                                {% endfor %}
+                            </select></li>
+                            <li>Llista de mapes disponibles: <select name="maps">
+                                {% for value in options.maps %}
+                                    <option value="{{value}}">{{value}}</option>
+                                {% endfor %}
+                            </select></li>
+                        </ul>
+                    </form>
+                    <button class="close">Tanca</button><input type="submit" value="Crea" form="{{version}}-form">
+                </dialog>
+            </div>
+        {% endfor %}
+    </div>
 </body>
 </html>

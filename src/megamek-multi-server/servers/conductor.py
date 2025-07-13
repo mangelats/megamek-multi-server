@@ -1,5 +1,5 @@
 from asyncio import Queue
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterator
 from pathlib import Path
 from uuid import UUID
 from pydantic import BaseModel, RootModel
@@ -8,25 +8,29 @@ import asyncio
 from .server import MegaMekServer, ServerState
 from .server_info import ServerInfo
 from .server_config import ProcessArgs, Mapping, ServerConfig
-from .event import Event, ServerAdded, ServerStateChanged, ServersSet
+from .events import Event, ServerAdded, ServerRemoved, ServerStateChanged, ServersSet
 
 Version = str
 
 class Conductor:
-    _config: 'OrchestratorConfig'
+    _config: 'ConductorConfig'
     base_path: Path
     _servers: dict[UUID, MegaMekServer]
     _aquired_ports: set[int]
     _queues: set[Queue[Event]]
 
-    def __init__(self, base_path: Path, config: 'OrchestratorConfig') -> None:
+    def __init__(self, base_path: Path, config: 'ConductorConfig') -> None:
         self.base_path = base_path
         self._config = config
         self._servers = {}
         self._aquired_ports = set()
         self._queues = set()
+    
+    @property
+    def config(self) -> 'ConductorConfig':
+        return self._config
 
-    async def start_server(self, selection: 'Selection') -> UUID:
+    async def start_server(self, selection: 'OptionSelection') -> UUID:
         options = self._config[selection.version]
         config = ServerConfig(
             process_args=options.process,
@@ -65,6 +69,7 @@ class Conductor:
         finally:
             del self._servers[server_id]
             self._aquired_ports.remove(port)
+            self._broadcast_event(ServerRemoved(id=server_id))
     
     def all_servers_info(self) -> list['ServerInfo']:
         return [ServerInfo.from_server(server) for server in self._servers.values()]
@@ -100,11 +105,20 @@ class Conductor:
             q.put_nowait(event)
 
 
-class OrchestratorConfig(RootModel):
+class ConductorConfig(RootModel):
     root: dict[Version, 'Options']
 
-    def __iter__(self) -> None:
-        return iter(self.root)
+    def __iter__(self) -> Iterator[Version]:
+        return self.root.keys()
+    
+    def items(self) -> Iterator[tuple[Version, 'Options']]:
+        return self.root.items()
+    
+    def keys(self) -> Iterator[Version]:
+        return self.root.keys()
+    
+    def values(self) -> Iterator['Options']:
+        return self.root.values()
 
     def __getitem__(self, item: Version) -> 'Options':
         return self.root[item]
@@ -120,7 +134,8 @@ class Options(BaseModel):
     mechs: dict[str, Mapping]
     maps: dict[str, Mapping]
 
-class Selection(BaseModel):
+class OptionSelection(BaseModel):
+    """Information that defined what option is used."""
     version: Version
     mmconf: str
     mechs: str

@@ -15,6 +15,7 @@ class EventType(str, Enum):
 
 
 class BaseEvent(BaseModel):
+    """Shared data for all events."""
     event_timestamp: datetime = Field(default_factory=datetime.now)
 
 
@@ -24,16 +25,18 @@ class ServersSet(BaseEvent):
     servers: list[ServerInfo]
 
 class ServerAdded(BaseEvent):
-    """"""
+    """A server has been added."""
     event_type: Literal[EventType.server_added] = Field(default=EventType.server_added)
     info: ServerInfo
 
 class ServerStateChanged(BaseEvent):
+    """A server has changed its state."""
     event_type: Literal[EventType.server_state_changed] = Field(default=EventType.server_state_changed)
     id: UUID
     new_state: ServerState
 
 class ServerRemoved(BaseEvent):
+    """A server was removed and no longer exists."""
     event_type: Literal[EventType.server_removed] = Field(default=EventType.server_removed)
     id: UUID
 

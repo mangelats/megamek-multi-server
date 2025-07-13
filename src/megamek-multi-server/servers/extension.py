@@ -2,6 +2,7 @@ from aiofiles.tempfile import TemporaryDirectory
 from asyncio import Event
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from pydantic import BaseModel, RootModel
 from quart import current_app
 from typing import Optional
 import json
@@ -11,7 +12,8 @@ import sys
 import aiofiles
 from quart import Quart
 
-from .conductor import Conductor, OrchestratorConfig
+from .conductor import Conductor, ConductorConfig, Version
+from .commands import Command, CreateServer, DestroyServer
 
 _EXT_CODE = "QUART_MEGA_MECH"
 
@@ -48,11 +50,23 @@ class QuartMegaMek:
             s: str = await f.read()
             config = json.loads(s)
             async with TemporaryDirectory() as temp_dir:
-                server_configs = OrchestratorConfig(config["available_configs"])
+                server_configs = ConductorConfig(config["available_configs"])
                 self._conductor = Conductor(Path(temp_dir), server_configs)
                 await self._event.wait()
                 await self._conductor.stop_all_servers()
                 self._conductor = None
+
+    @staticmethod
+    def config_options() -> 'ConfigOptions':
+        result: dict[Version, ConfigVersionOption] = {}
+        for k, v in QuartMegaMek.current()._conductor.config.items():
+            result[k] = ConfigVersionOption(
+                mm_version=v.mm_version,
+                mmconf=list(v.mmconf.keys()),
+                mechs=list(v.mechs.keys()),
+                maps=list(v.maps.keys()),
+            )
+        return ConfigOptions(result)
 
     @staticmethod
     def current() -> 'QuartMegaMek':
@@ -61,3 +75,19 @@ class QuartMegaMek:
     @staticmethod
     def events() -> AsyncGenerator[Event, None]:
         return QuartMegaMek.current()._conductor.events()
+    
+    @staticmethod
+    async def apply_command(command: Command) -> None:
+        if isinstance(command, CreateServer):
+            await QuartMegaMek.current()._conductor.start_server(command.options)
+        elif isinstance(command, DestroyServer):
+            await QuartMegaMek.current()._conductor.stop_server(command.id)
+
+
+class ConfigVersionOption(BaseModel):
+    mm_version: str
+    mmconf: list[str]
+    mechs: list[str]
+    maps: list[str]
+
+ConfigOptions = RootModel[dict[Version, ConfigVersionOption]]
