@@ -1,26 +1,26 @@
 from enum import Enum
 from aiofiles.tempfile import TemporaryDirectory
-from asyncio import Event
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from pydantic import BaseModel, RootModel
 from quart import current_app
-from typing import Literal, Optional
+from typing import Optional
 import json
 import os
-import sys
 
 import aiofiles
 from quart import Quart
 
 from .conductor import Conductor, ConductorConfig, Version
 from .commands import Command, CreateServer, DestroyServer
+from .events import Event
 
 _EXT_CODE = "QUART_MEGA_MECH"
 
 class _ConductorState(str, Enum):
     ready='ready'
     starting='starting'
+    closed='closed'
 
 class QuartMegaMek:
     _conductor: Conductor | _ConductorState
@@ -51,12 +51,23 @@ class QuartMegaMek:
                 self._conductor = Conductor(Path(temp_dir), server_configs)
                 yield
                 await self._conductor.stop_all_servers()
-                self._conductor = None
+                self._conductor = _ConductorState.closed
+
+    @staticmethod
+    def current() -> 'QuartMegaMek':
+        return current_app.extensions[_EXT_CODE]
+
+    @staticmethod
+    def _current_conductor() -> Conductor:
+        conductor = QuartMegaMek.current()._conductor
+        if isinstance(conductor, _ConductorState):
+            raise Exception('The conductor is not available')
+        return conductor
 
     @staticmethod
     def config_options() -> 'ConfigOptions':
         result: dict[Version, ConfigVersionOption] = {}
-        for k, v in QuartMegaMek.current()._conductor.config.items():
+        for k, v in QuartMegaMek._current_conductor().config.items():
             result[k] = ConfigVersionOption(
                 mm_version=v.mm_version,
                 mmconf=list(v.mmconf.keys()),
@@ -64,21 +75,17 @@ class QuartMegaMek:
                 maps=list(v.maps.keys()),
             )
         return ConfigOptions(result)
-
-    @staticmethod
-    def current() -> 'QuartMegaMek':
-        return current_app.extensions[_EXT_CODE]
         
     @staticmethod
     def events() -> AsyncGenerator[Event, None]:
-        return QuartMegaMek.current()._conductor.events()
+        return QuartMegaMek._current_conductor().events()
     
     @staticmethod
     async def apply_command(command: Command) -> None:
         if isinstance(command, CreateServer):
-            await QuartMegaMek.current()._conductor.start_server(command.options)
+            await QuartMegaMek._current_conductor().start_server(command.options)
         elif isinstance(command, DestroyServer):
-            await QuartMegaMek.current()._conductor.stop_server(command.id)
+            await QuartMegaMek._current_conductor().stop_server(command.id)
 
 
 class ConfigVersionOption(BaseModel):

@@ -1,6 +1,7 @@
 from asyncio import Queue
-from collections.abc import AsyncGenerator, Iterator
+from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Iterable
 from uuid import UUID
 from pydantic import BaseModel, RootModel
 import asyncio
@@ -86,7 +87,7 @@ class Conductor:
         raise Exception('All ports are full (WTF happened?)')
     
     async def events(self) -> AsyncGenerator[Event, None]:
-        queue = Queue()
+        queue: Queue[Event] = Queue()
         self._queues.add(queue)
         yield ServersSet(servers=self.all_servers_info())
         try:
@@ -107,17 +108,14 @@ class Conductor:
 
 class ConductorConfig(RootModel):
     root: dict[Version, 'Options']
-
-    def __iter__(self) -> Iterator[Version]:
-        return self.root.keys()
     
-    def items(self) -> Iterator[tuple[Version, 'Options']]:
+    def items(self) -> Iterable[tuple[Version, 'Options']]:
         return self.root.items()
     
-    def keys(self) -> Iterator[Version]:
+    def keys(self) -> Iterable[Version]:
         return self.root.keys()
     
-    def values(self) -> Iterator['Options']:
+    def values(self) -> Iterable['Options']:
         return self.root.values()
 
     def __getitem__(self, item: Version) -> 'Options':

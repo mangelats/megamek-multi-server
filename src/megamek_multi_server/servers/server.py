@@ -108,6 +108,8 @@ class MegaMekServer:
         await asyncio.sleep(1)
 
     async def _stop(self) -> None:
+        if self._proc is None:
+            raise Exception('Trying to close a process that does not exist (how did we get here?)')
         try:
             print("Attempting to terminate it gracefully (within 10 seconds)")
             async with asyncio.timeout(10):
@@ -120,7 +122,7 @@ class MegaMekServer:
         self._proc = None
 
     async def _clean_up(self) -> None:
-        await aioshutil.rmtree(self._path)
+        await aioshutil.rmtree(self._path, ignore_errors=True)
         
 
 class ServerState(str, Enum):

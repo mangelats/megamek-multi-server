@@ -20,7 +20,7 @@ QuartMegaMek(app)
 
 @app.route('/')
 @login_required
-async def index() -> None:
+async def index():
     config_options=QuartMegaMek.config_options().model_dump()
     return await render_template(
         "index.html",
@@ -56,7 +56,7 @@ async def _commands() -> None:
 
 
 @app.route('/login', methods=['GET', 'POST'])
-async def login() -> None:
+async def login():
     error = None
     next = session.get('next')
     if request.method == 'POST':
@@ -73,10 +73,10 @@ async def login() -> None:
     return await render_template("login.html", error=error)
 
 @app.errorhandler(Unauthorized)
-async def redirect_to_login(*_) -> None:
+async def redirect_to_login(*_):
     return redirect(url_for("login"))
 
 @app.route('/logout')
-async def logout() -> None:
+async def logout():
     auth.logout()
     return redirect('/')

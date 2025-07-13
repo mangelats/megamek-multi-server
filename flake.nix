@@ -46,7 +46,7 @@
           text = ''
             cd ./src
             export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
-            ${py}/bin/python -m megamek-multi-server ${config_file}
+            ${py}/bin/python -m megamek_multi_server ${config_file}
           '';
         };
         prod = pkgs.writeShellApplication {
@@ -55,7 +55,7 @@
           text = ''
             cd ./src
             export MEGAMEK_MULTI_SERVER_CONFIG="${config_file}"
-            ${py}/bin/hypercorn megamek-multi-server:app
+            ${py}/bin/hypercorn megamek_multi_server:app
           '';
         };
         prod-app = {

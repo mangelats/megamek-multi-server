@@ -7,9 +7,9 @@ from .pwd_file import hashed_password
 def login(username: str, password: str) -> Optional[AuthUser]:
     password_hash = hashed_password(username)
     if password_hash is None:
-        return
+        return None
     if not check_password_hash(password_hash, password):
-        return
+        return None
     
     user = AuthUser(username)
     login_user(user)
