@@ -56,12 +56,12 @@
         };
         package = pkgs.python3Packages.buildPythonPackage rec {
           pname = "megamek_multi_server";
-          version = "0.1.0";
+          version = "0.1.1";
           src = pkgs.fetchFromGitHub {
             owner = "mangelats";
             repo = "megamek-multi-server";
-            rev = "e8c6ca7367e61b1ba604dedcfccba8d3f4f38897";
-            hash = "sha256-1HsVwcjYkhBn+88ZtDBKuYp8NvfKTsddHNPQ/NGo7XQ=";
+            rev = "6679b38ed483d4a1ecdd8b7416ee0fd1f04a87ec";
+            hash = "sha256-4kCW76q+y4o+q8DYcotIYluzGcaaHk9Dk7q3i7awlVs=";
           };
           propagatedBuildInputs = [ py ];
           
@@ -79,7 +79,7 @@
 
           text = ''
             export MEGAMEK_MULTI_SERVER_CONFIG="${config-file}"
-            if [ -n "$1" ]; then
+            if [ "$#" -ge 1 ]; then
               export MEGAMEK_MULTI_SERVER_PASSWORDS="$1"
             fi
 
