@@ -78,7 +78,7 @@
           name = "megamech-multi-server";
 
           text = ''
-            export MEGAMEK_MULTI_SERVER_CONFIG="${config-file}"
+            export MEGAMEK_MULTI_SERVER_CONFIG="''${MEGAMEK_MULTI_SERVER_CONFIG:-${config-file}}"
             if [ "$#" -ge 1 ]; then
               export MEGAMEK_MULTI_SERVER_PASSWORDS="$1"
             fi
