@@ -79,6 +79,10 @@
 
           text = ''
             export MEGAMEK_MULTI_SERVER_CONFIG="${config-file}"
+            if [ -n "$1" ]; then
+              export MEGAMEK_MULTI_SERVER_PASSWORDS="$1"
+            fi
+
             ${prod-python}/bin/hypercorn megamek_multi_server:app
           '';
         };
