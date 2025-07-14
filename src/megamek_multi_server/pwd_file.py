@@ -6,7 +6,8 @@ _cache: tuple[_Signature, dict[str, str]] | None = None
 
 
 def hashed_password(username: str) -> str | None:
-    assert username, "Invalid username!"
+    if not username:
+        return None
     return _hashed_passwords().get(username)
 
 

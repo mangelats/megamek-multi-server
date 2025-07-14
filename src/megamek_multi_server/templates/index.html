@@ -141,21 +141,51 @@
         }
     </script>
     <style>
-        html { margin: 0; padding: 0; }
-        body { margin: 0; padding: 10ch; }
+        * {
+            box-sizing: border-box;
+        }
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0.5rem;
+            background-color: #f3f3f3;
+
+            display: flex;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 1.5rem;
+        }
+        .logout {
+            font-size: smaller;
+            align-self: flex-end;
+        }
 
         .servers {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(15ch, 30ch));
+            grid-template-columns: repeat(auto-fit, minmax(15ch, 33ch));
+            padding: 2rem;
             gap: 2rem;
         }
+
         .servers > * {
-            height: 15rem;
+            height: 17.5rem;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 1.5rem;
+            border: thin solid #666;
         }
     </style>
 </head>
 <body>
-    <p>Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></p>
+    <div class="logout">Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></div>
     <div class="servers">
         {% for version, options in config_options|items %}
             <div class="create" data-version="{{ version }}">
