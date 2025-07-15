@@ -91,6 +91,10 @@
             program = "${prod}/bin/megamech-multi-server";
             meta.description = "MegaMek multi-server";
         };
+        gen-pwd = pkgs.writeShellApplication {
+          name = "gen-pwd";
+          text = ''${py}/bin/python -c 'from werkzeug.security import generate_password_hash; import sys; print(generate_password_hash(sys.argv[1]))' "$@"'';
+        };
       in
       {
         packages = (prefix "mm-0_49" mm0_49.packages) // (prefix "mm-0_50" mm0_50.packages) // {
@@ -105,6 +109,11 @@
           };
           prod = prod-app;
           default = prod-app;
+          gen-pwd = {
+            type = "app";
+            program = "${gen-pwd}/bin/gen-pwd";
+            meta.description = "Hash plain text into a password hash.";
+          };
         };
         devShells.default = pkgs.mkShellNoCC {
           packages = [
