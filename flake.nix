@@ -83,13 +83,13 @@
               export MEGAMEK_MULTI_SERVER_PASSWORDS="$1"
             fi
 
-            ${prod-python}/bin/hypercorn megamek_multi_server:app
+            ${prod-python}/bin/hypercorn --bind '0.0.0.0:80' --bind '[::]:80' megamek_multi_server:app
           '';
         };
         prod-app = {
           type = "app";
-            program = "${prod}/bin/megamech-multi-server";
-            meta.description = "MegaMek multi-server";
+          program = "${prod}/bin/megamech-multi-server";
+          meta.description = "MegaMek multi-server";
         };
         gen-pwd = pkgs.writeShellApplication {
           name = "gen-pwd";

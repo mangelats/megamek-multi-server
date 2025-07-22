@@ -52,7 +52,7 @@
     classpath = (concatStringsSep ":" (map (path: "${src}/${path}") libs));
     process = [
         "${jdk}/bin/java"
-        "-Xmx4096m"
+        "-Xmx512m"
         "--add-opens"
         "java.base/java.util=ALL-UNNAMED"
         "--add-opens"

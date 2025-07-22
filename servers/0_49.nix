@@ -5,11 +5,20 @@
     concatStringsSep = lib.strings.concatStringsSep;
     mapping = target: sources: { inherit target sources; };
 
-    mmconf = mapping "mmconf" [
+    base-mmconf = [
         "${src}/sentry.properties"
         "${src}/mmconf/log4j2.xml"
         "${src}/mmconf/serialkiller.xml"
     ];
+    mmconf = {
+        default = mapping "mmconf" base-mmconf;
+        jordi = mapping "mmconf" (base-mmconf ++ [
+            ./game-options/jordi
+        ]);
+        nacional = mapping "mmconf" (base-mmconf ++ [
+            ./game-options/Nacional-Megamek
+        ]);
+    };
     mechs = mapping "data/mechfiles" [ "${src}/data/mechfiles" ];
     maps = mapping "data/boards" [ "${src}/data/boards" ];
 
@@ -52,7 +61,7 @@
     classpath = (concatStringsSep ":" (map (path: "${src}/${path}") libs));
     process = [
         "${jdk}/bin/java"
-        "-Xmx4096m"
+        "-Xmx512m"
         "--add-opens"
         "java.base/java.util=ALL-UNNAMED"
         "--add-opens"
@@ -86,7 +95,7 @@ in rec {
     config = {
         inherit process;
         mm_version = "0.49.19.1";
-        mmconf = { default = mmconf; };
+        inherit mmconf;
         mechs = { default = mechs; };
         maps = { default = maps; };
     };
