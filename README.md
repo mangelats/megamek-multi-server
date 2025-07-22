@@ -1,4 +1,4 @@
-# MegaMech multi-server
+# MegaMek multi-server
 Small service that allows to spawn multiple [MegaMek](https://megamek.org/)
 servers and close them once you are done.
 

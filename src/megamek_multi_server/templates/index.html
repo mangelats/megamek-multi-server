@@ -7,25 +7,9 @@
     <script type="text/javascript" async defer>
         document.addEventListener('DOMContentLoaded', () => {
             for (const server of document.querySelectorAll('.create')) {
-                const version = server.getAttribute('data-version')
-
-                const open = server.querySelector('.open')
-                const dialog = server.querySelector('dialog');
-                const close = server.querySelector('.close');
-                const form = server.querySelector('form')
-
-                open.addEventListener('click', () => dialog.show())
-                close.addEventListener('click', () => dialog.close())
-
-                form.addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    data = new FormData(form)
-                    dialog.close();
-                    create(version, data.get('mmconf'), data.get('mechs'), data.get('maps'));
-                });
-
+                const name = server.getAttribute('data-name')
+                server.querySelector('button').addEventListener('click', () => create(name))
             }
-
         })
 
         const ws = new WebSocket(`ws://${location.host}/ws`);
@@ -43,10 +27,11 @@
                 console.warn("Unknown event", event)
             }
         });
-        function create(version, mmconf, mechs, maps) {
+        function create(server) {
+            console.log("Creating", server)
             const message = {
                 cmd_type: 'create_server',
-                options: { version, mmconf, mechs, maps },
+                server,
             }
             const event = JSON.stringify(message)
             ws.send(event)
@@ -187,33 +172,9 @@
 <body>
     <div class="logout">Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></div>
     <div class="servers">
-        {% for version, options in config_options|items %}
-            <div class="create" data-version="{{ version }}">
-                <button class="open">Crea servidor per a MegaMek {{ version }}</button>
-                <dialog closedby="any">
-                    <h2>Crea servidor per a MegaMek {{ version }}</h2>
-                    <form id="{{version}}-form">
-                        <ul>
-                            <li>Versió exacte: {{ options.mm_version }}</li>
-                            <li>Configuració general: <select name="mmconf">
-                                {% for value in options.mmconf %}
-                                    <option value="{{value}}">{{value}}</option>
-                                {% endfor %}
-                            </select></li>
-                            <li>Llista de mechs disponibles: <select name="mechs">
-                                {% for value in options.mechs %}
-                                    <option value="{{value}}">{{value}}</option>
-                                {% endfor %}
-                            </select></li>
-                            <li>Llista de mapes disponibles: <select name="maps">
-                                {% for value in options.maps %}
-                                    <option value="{{value}}">{{value}}</option>
-                                {% endfor %}
-                            </select></li>
-                        </ul>
-                    </form>
-                    <button class="close">Tanca</button><input type="submit" value="Crea" form="{{version}}-form">
-                </dialog>
+        {% for name in config_options %}
+            <div class="create" data-name="{{ name }}">
+                <button>Crea servidor: {{ name }}</button>
             </div>
         {% endfor %}
     </div>

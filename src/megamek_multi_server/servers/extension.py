@@ -7,14 +7,15 @@ from typing import Optional
 
 import aiofiles
 from aiofiles.tempfile import TemporaryDirectory
+from megamek_multi_server.servers.server_description import ServerDescription
 from pydantic import BaseModel, RootModel
 from quart import current_app, Quart
 
 from .commands import Command, CreateServer, DestroyServer
-from .conductor import Conductor, ConductorConfig, Version
+from .conductor import AvailableServerDescriptions, Conductor
 from .events import Event
 
-_EXT_CODE = "QUART_MEGA_MECH"
+_EXT_CODE = "QUART_MEGAMEK"
 
 
 class _ConductorState(str, Enum):
@@ -33,7 +34,7 @@ class QuartMegaMek:
 
     def init_app(self, app: Quart) -> None:
         if _EXT_CODE in app.extensions:
-            raise Exception("MegaMech extension has already been initialized")
+            raise Exception("MegaMek extension has already been initialized")
         app.extensions[_EXT_CODE] = self
 
         if self._conductor == _ConductorState.ready:
@@ -43,13 +44,12 @@ class QuartMegaMek:
             raise Exception("A conductor is already working")
 
     async def _run_conductor(self) -> AsyncGenerator[None, None]:
-        config_file = os.environ["MEGAMEK_MULTI_SERVER_CONFIG"]
-        async with aiofiles.open(config_file, mode="r") as f:
+        servers_file = os.environ["MEGAMEK_MULTI_SERVER_SERVERS"]
+        async with aiofiles.open(servers_file, mode="r") as f:
             s: str = await f.read()
-            config = json.loads(s)
+            servers = AvailableServerDescriptions(json.loads(s))
             async with TemporaryDirectory() as temp_dir:
-                server_configs = ConductorConfig(config["available_configs"])
-                self._conductor = Conductor(Path(temp_dir), server_configs)
+                self._conductor = Conductor(Path(temp_dir), servers)
                 yield
                 await self._conductor.stop_all_servers()
                 self._conductor = _ConductorState.closed
@@ -67,15 +67,8 @@ class QuartMegaMek:
 
     @staticmethod
     def config_options() -> "ConfigOptions":
-        result: dict[Version, ConfigVersionOption] = {}
-        for k, v in QuartMegaMek._current_conductor().config.items():
-            result[k] = ConfigVersionOption(
-                mm_version=v.mm_version,
-                mmconf=list(v.mmconf.keys()),
-                mechs=list(v.mechs.keys()),
-                maps=list(v.maps.keys()),
-            )
-        return ConfigOptions(result)
+        current = QuartMegaMek._current_conductor()
+        return ConfigOptions(current.server_descriptions())
 
     @staticmethod
     def events() -> AsyncGenerator[Event, None]:
@@ -84,16 +77,8 @@ class QuartMegaMek:
     @staticmethod
     async def apply_command(command: Command) -> None:
         if isinstance(command, CreateServer):
-            await QuartMegaMek._current_conductor().start_server(command.options)
+            await QuartMegaMek._current_conductor().start_server(command.server)
         elif isinstance(command, DestroyServer):
             await QuartMegaMek._current_conductor().stop_server(command.id)
 
-
-class ConfigVersionOption(BaseModel):
-    mm_version: str
-    mmconf: list[str]
-    mechs: list[str]
-    maps: list[str]
-
-
-ConfigOptions = RootModel[dict[Version, ConfigVersionOption]]
+ConfigOptions = RootModel[list[str]]

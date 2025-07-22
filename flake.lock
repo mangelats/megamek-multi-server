@@ -18,13 +18,28 @@
         "type": "github"
       }
     },
+    "nix-std": {
+      "locked": {
+        "lastModified": 1710870712,
+        "narHash": "sha256-e+7MJF2gsgTBuOWv4mCimSP0D9+naeFSw9a7N3yEmv4=",
+        "owner": "chessai",
+        "repo": "nix-std",
+        "rev": "31bbc925750cc9d8f828fe55cee1a2bd985e0c00",
+        "type": "github"
+      },
+      "original": {
+        "owner": "chessai",
+        "repo": "nix-std",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1751220529,
-        "narHash": "sha256-yhfgnGIlrsJJYZ84I7SRmIW1Mnprh7pHAgDbPeRIYzg=",
+        "lastModified": 1752942963,
+        "narHash": "sha256-DAL+SEKV/jrvbwEcQabUwR+YTx7V09Gbf0zLJIfD4oc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "67c6a0c938fb6e6c3685f3f9240092a03daf49e5",
+        "rev": "19331827f62c85e29ac14da62a5c26828f138517",
         "type": "github"
       },
       "original": {
@@ -36,6 +51,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "nix-std": "nix-std",
         "nixpkgs": "nixpkgs"
       }
     },

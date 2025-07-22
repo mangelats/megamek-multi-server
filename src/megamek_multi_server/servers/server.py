@@ -6,22 +6,21 @@ from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 import aioshutil
-from aiofiles.os import makedirs
-
-from .server_config import Mapping, ProcessArgs, ServerConfig
+from .server_description import ServerDescription, ServerSetup
 
 StateChanged = Callable[[UUID, "ServerState"], None]
 
 
 class MegaMekServer:
     _uuid: UUID
-    _mm_version: str
-    _port: int
-    _state: "ServerState"
+    _server_description: ServerDescription
     _path: Path
-    _proc: Optional[Process]
-    _config: ServerConfig
+    _port: int
+
     _state_changed: Optional[StateChanged]
+
+    _proc: Optional[Process]
+    _state: "ServerState"
 
     @property
     def id(self) -> UUID:
@@ -29,7 +28,7 @@ class MegaMekServer:
 
     @property
     def mm_version(self) -> str:
-        return self._mm_version
+        return self._server_description.version
 
     @property
     def port(self) -> int:
@@ -43,24 +42,21 @@ class MegaMekServer:
 
     def __init__(
         self,
-        mm_version: str,
+        server_description: ServerDescription,
         base: Path,
-        config: ServerConfig,
         port: int,
         *,
         state_changed: Optional[StateChanged] = None,
     ) -> None:
-        uuid = uuid4()
-        path = base / str(uuid)
-
-        self._uuid = uuid
-        self._mm_version = mm_version
+        self._uuid = uuid4()
+        self._server_description = server_description
+        self._path = base / str(self._uuid)
         self._port = port
-        self._state = ServerState.fresh
-        self._path = path
-        self._proc = None
-        self._config = config
+
         self._state_changed = state_changed
+
+        self._proc = None
+        self._state = ServerState.fresh
 
     async def start(self) -> None:
         """Starts the server with some config."""
@@ -69,9 +65,9 @@ class MegaMekServer:
 
         print(f"Starting server {self.id} on {self._port} at {self._path}")
         self._set_state(ServerState.setting_up)
-        await self._set_up(self._config.mmconf, self._config.mechs, self._config.maps)
+        await self._set_up()
         self._set_state(ServerState.spawning)
-        await self._spawn(self._config.process_args)
+        await self._spawn(self._server_description.exe)
         self._set_state(ServerState.running)
 
     async def stop(self) -> None:
@@ -90,13 +86,10 @@ class MegaMekServer:
         if self._state_changed is not None:
             self._state_changed(self._uuid, state)
 
-    async def _set_up(self, mmconf: Mapping, mechs: Mapping, maps: Mapping) -> None:
-        await makedirs(self._path / "logs", mode=511, exist_ok=True)
-        await mmconf.apply(self._path)
-        await mechs.apply(self._path)
-        await maps.apply(self._path)
+    async def _set_up(self) -> None:
+        await self._server_description.setup.set_up_in(self._path)
 
-    async def _spawn(self, process_args: ProcessArgs) -> None:
+    async def _spawn(self, process_args: list[str]) -> None:
         self._proc = await asyncio.create_subprocess_exec(
             *process_args,
             "-dedicated",

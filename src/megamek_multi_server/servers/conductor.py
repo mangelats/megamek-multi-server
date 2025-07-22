@@ -2,49 +2,41 @@ import asyncio
 from asyncio import Queue
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Iterable
 from uuid import UUID
 
-from pydantic import BaseModel, RootModel
+from pydantic import RootModel
 
 from .events import Event, ServerAdded, ServerRemoved, ServersSet, ServerStateChanged
 from .server import MegaMekServer, ServerState
-from .server_config import Mapping, ProcessArgs, ServerConfig
+from .server_description import ServerDescription
 from .server_info import ServerInfo
 
-Version = str
-
+AvailableServerDescriptions = RootModel[dict[str, ServerDescription]]
 
 class Conductor:
-    _config: "ConductorConfig"
+    _descriptions: dict[str, ServerDescription]
     base_path: Path
     _servers: dict[UUID, MegaMekServer]
     _aquired_ports: set[int]
     _queues: set[Queue[Event]]
 
-    def __init__(self, base_path: Path, config: "ConductorConfig") -> None:
+    def __init__(self, base_path: Path, descriptions: AvailableServerDescriptions) -> None:
         self.base_path = base_path
-        self._config = config
+        self._descriptions = descriptions.root
         self._servers = {}
         self._aquired_ports = set()
         self._queues = set()
 
-    @property
-    def config(self) -> "ConductorConfig":
-        return self._config
+    def server_descriptions(self) -> list[str]:
+        return list(self._descriptions.keys())
 
-    async def start_server(self, selection: "OptionSelection") -> UUID:
-        options = self._config[selection.version]
-        config = ServerConfig(
-            process_args=options.process,
-            mmconf=options.mmconf[selection.mmconf],
-            mechs=options.mechs[selection.mechs],
-            maps=options.maps[selection.maps],
-        )
+    async def start_server(self, config_name: str) -> UUID:
+        description = self._descriptions[config_name]
+
         port = self._aquire_port()
         try:
             server = MegaMekServer(
-                options.mm_version, self.base_path, config, port, state_changed=self._state_changed
+                description, self.base_path, port, state_changed=self._state_changed
             )
             self._broadcast_event(ServerAdded(info=ServerInfo.from_server(server)))
             self._servers[server.id] = server
@@ -102,41 +94,3 @@ class Conductor:
         for q in self._queues:
             # TODO: limit number of pending events
             q.put_nowait(event)
-
-
-class ConductorConfig(RootModel):
-    root: dict[Version, "Options"]
-
-    def items(self) -> Iterable[tuple[Version, "Options"]]:
-        return self.root.items()
-
-    def keys(self) -> Iterable[Version]:
-        return self.root.keys()
-
-    def values(self) -> Iterable["Options"]:
-        return self.root.values()
-
-    def __getitem__(self, item: Version) -> "Options":
-        return self.root[item]
-
-
-class Options(BaseModel):
-    """
-    Definition of available options
-    (combine different options to make a valid ServerConfig)
-    """
-
-    process: ProcessArgs
-    mm_version: str
-    mmconf: dict[str, Mapping]
-    mechs: dict[str, Mapping]
-    maps: dict[str, Mapping]
-
-
-class OptionSelection(BaseModel):
-    """Information that defined what option is used."""
-
-    version: Version
-    mmconf: str
-    mechs: str
-    maps: str
