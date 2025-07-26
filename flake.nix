@@ -94,6 +94,18 @@
           bind = "localhost:80";
         };
       };
+
+      gen-pass = pkgs.writers.writePython3Bin "gen-pass" { libraries = [ pkgs.python3Packages.werkzeug ]; } ''
+        from werkzeug.security import generate_password_hash
+        from getpass import getpass
+
+        if __name__ == '__main__':
+            name = input("Username: ")
+            password = getpass("Password (hidden): ")
+            hash = generate_password_hash(password)
+            print("Password file entry:")
+            print(f"{name} {hash}")
+      '';
     };
 
     apps = {
@@ -101,6 +113,11 @@
         type = "app";
         program = "${packages.dev}/bin/megamek-multi-server-dev";
         meta.description = "Run app in development mode.";
+      };
+      gen-pass = {
+        type = "app";
+        program = "${packages.gen-pass}/bin/gen-pass";
+        meta.description = "Open script to generate password entries";
       };
     };
 

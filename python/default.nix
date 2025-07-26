@@ -9,9 +9,10 @@
     
     deps = ps: [
         # Base
-        ps.pydantic
         ps.aiofiles
         ps.aioshutil
+        ps.pydantic
+        ps.werkzeug
 
         ps.quart
         ps.quart-auth
