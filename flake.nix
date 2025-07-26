@@ -14,8 +14,11 @@
     utils = import ./utils.nix { inherit pkgs; };
   in rec {
     lib = {
-      v0_49 = import ./setups/0_49.nix { inherit pkgs; };
-      v0_50 = import ./setups/0_50.nix { inherit pkgs; };
+      # Note: v0.49.19.1 and v0.49.20 are incopatible even if their semver means
+      #   they should be.
+      v0_49_19 = import ./setups/0_49_19.nix { inherit pkgs; };
+      v0_49_20 = import ./setups/0_49_20.nix { inherit pkgs; };
+      v0_50_06 = import ./setups/0_50_06.nix { inherit pkgs; };
     };
     packages = {
       python = import ./python { inherit pkgs; };
@@ -34,8 +37,9 @@
         ) {
           python = packages.python;
           servers = {
-            "Stock MegaMek v0.49" = utils.server-from lib.v0_49;
-            "Stock MegaMek v0.50" = utils.server-from lib.v0_50;
+            "Stock MegaMek v0.49.19" = utils.server-from lib.v0_49_19;
+            "Stock MegaMek v0.49.20" = utils.server-from lib.v0_49_20;
+            "Stock MegaMek v0.50.06" = utils.server-from lib.v0_50_06;
           };
           passwords = {
             # test => password
@@ -83,8 +87,8 @@
       ) rec {
         python = packages.python.override { extra-dependencies = ps: [ packages.app ps.hypercorn ]; };
         servers = {
-          "Stock MegaMek v0.49" = utils.server-from lib.v0_49;
-          "Stock MegaMek v0.50" = utils.server-from lib.v0_50;
+          "Stock MegaMek v0.49.20" = utils.server-from lib.v0_49_20;
+          "Stock MegaMek v0.50.06" = utils.server-from lib.v0_50_06;
         };
         passwords = null;
         passwords-file = pkgs.writeText "passwords.txt" ""; # No logins by default

@@ -10,10 +10,10 @@
     
 
     # Source for the entire MegaMek application
-    version = "0.49.20";
+    version = "0.49.19.1";
     src = pkgs.fetchzip {
         url = "https://github.com/MegaMek/megamek/releases/download/v${version}/megamek-${version}.tar.gz";
-        hash = "sha256-9jaN5bm9nofCZ4tNAswKgYHwOx79Yvf+tSE/Y2PvIpU=";
+        hash = "sha256-8gNCKkZkPZxvxBgeRtpy2yhhxEaiiRJkHvnUAFiYY0s=";
     };
     classpath = utils.classpath src [
         "MegaMek.jar"
@@ -82,12 +82,12 @@ in {
     lib = rec {
         inherit version exe;
         meks = pkgs.stdenvNoCC.mkDerivation {
-            name = "megamek-0.49-meks";
+            name = "megamek-0.49.20-meks";
             src = src;
             installPhase = ''cp -r data/mechfiles/ $out'';
         };
         boards = pkgs.stdenvNoCC.mkDerivation {
-            name = "megamek-0.49-boards";
+            name = "megamek-0.49.20-boards";
             src = src;
             installPhase = ''cp -r data/boards/ $out'';
         };
@@ -105,7 +105,7 @@ in {
                 cp "${gameoptions}" "$out/gameoptions.xml"
             '' else "");
         }) {
-            derivation-name = "megamek-0.49-config";
+            derivation-name = "megamek-0.49.20-config";
             # Unlike other configurations MegaMek has its gameoptions defaults
             #   in the code instead of a file with default values.
             gameoptions = null;
