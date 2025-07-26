@@ -23,7 +23,7 @@ def _hashed_passwords() -> dict[str, str]:
     with open(pwds_path, "r") as file:
         for line in file:
             line = line.strip()
-            if line(line) == 0 or line.startswith('#'):
+            if len(line) == 0 or line.startswith('#'):
                 continue
             [username, hashed_password] = line.rstrip().split(" ", 1)
             value[username] = hashed_password
