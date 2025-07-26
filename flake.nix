@@ -54,8 +54,8 @@
         src = pkgs.fetchFromGitHub {
           owner = "mangelats";
           repo = "megamek-multi-server";
-          rev = "55640771958e62b5e0a9c87042248f5c2f587870";
-          hash = "sha256-EdJ5eHO7+DdpYmT88aGIxWMUT+vCpe2sYD4kjGzD5dY=";
+          rev = "d61321aee646a64b135d34a2e240fe5fb36d6248";
+          hash = "sha256-klLiFF/adm2wDBwYuV0LXSDrv0StaA5w2MJlgr3NJFI=";
         };
         propagatedBuildInputs = [ packages.python ];
         
@@ -76,10 +76,6 @@
         in pkgs.writeShellApplication {
           name = "megamek-multi-server";
           text = ''
-            if [ -z ''${QUART_SECRET_KEY+x} ]; then
-              >&2 echo "Please set a QUART_SECRET_KEY"
-              exit 1
-            fi
             export QUART_QUART_AUTH_DURATION="86400" # 24 hours
             export MEGAMEK_MULTI_SERVER_SERVERS="''${MEGAMEK_MULTI_SERVER_SERVERS:-${servers-file}}"
             export MEGAMEK_MULTI_SERVER_PASSWORDS="''${MEGAMEK_MULTI_SERVER_PASSWORDS:-${passwords-file'}}"
@@ -95,7 +91,7 @@
         passwords = null;
         passwords-file = pkgs.writeText "passwords.txt" ""; # No logins by default
         quart-config = {
-          bind = "localhost:8000";
+          bind = "localhost:80";
         };
       };
     };
