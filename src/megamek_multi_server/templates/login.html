@@ -4,50 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicia sessió al MegaMek multi-server</title>
+    <link rel="stylesheet" href="./static/pico.classless.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        html {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            width: 100%;
-            height: 100%;
-            padding: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f3f3f3;
-        }
-        form {
-            display: flex;
-            width: 100%;
-            max-width: 30ch;
-            flex-direction: column;
-            flex-wrap: nowrap;
-            gap: 2.5rem;
-            padding: 2rem;
-            background-color: white;
-            border-radius: 1.5rem;
-            border: thin solid #666;
-        }
         .error {
             font-size: smaller;
-            color: darkred;
+            color: var(--pico-form-element-invalid-border-color);
         }
         .error:empty { display: none; }
     </style>
 </head>
 <body>
-    <form action='{{ action }}' method='POST'>
-        <input type='text' name='username' placeholder='Usuari' required />
-        <input type='password' name='password' placeholder='Contrasenya' required />
-        <input type='submit' name='submit'value="Inicia sessió" />
-        <span class="error">{{ error or '' }}</span>
-    </form>
+    <main>
+        <article>
+            <form action='{{ action }}' method='POST'>
+                <input type='text' name='username' placeholder='Usuari' required />
+                <input type='password' name='password' placeholder='Contrasenya' required />
+                <input type='submit' name='submit'value="Inicia sessió" />
+                <span class="error">{{ error or '' }}</span>
+            </form>
+        </article>
+    </main>
 </body>
 </html>
