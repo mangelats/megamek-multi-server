@@ -29,6 +29,7 @@
             name = "megamek-multi-server-dev"; # rename to "serve"?
             text = ''
               cd ./src
+              export QUART_QUART_AUTH_DURATION="86400" # 24 hours
               export MEGAMEK_MULTI_SERVER_SERVERS="${servers-file}"
               export MEGAMEK_MULTI_SERVER_PASSWORDS="${passwords-file}"
               ${python}/bin/python -m megamek_multi_server
@@ -53,8 +54,8 @@
         src = pkgs.fetchFromGitHub {
           owner = "mangelats";
           repo = "megamek-multi-server";
-          rev = "4116cebb0e863d7ca2e83db88d6c03e12fdb1a93";
-          hash = "sha256-UUymtVD2LJBEen16SU1/9dO8rY82uvs40zQZ5BohjR8=";
+          rev = "55640771958e62b5e0a9c87042248f5c2f587870";
+          hash = "sha256-EdJ5eHO7+DdpYmT88aGIxWMUT+vCpe2sYD4kjGzD5dY=";
         };
         propagatedBuildInputs = [ packages.python ];
         
@@ -75,13 +76,14 @@
         in pkgs.writeShellApplication {
           name = "megamek-multi-server";
           text = ''
-            if [ -n "$QUART_SECRET_KEY" ]; then
+            if [ -z ''${QUART_SECRET_KEY+x} ]; then
               >&2 echo "Please set a QUART_SECRET_KEY"
               exit 1
             fi
+            export QUART_QUART_AUTH_DURATION="86400" # 24 hours
             export MEGAMEK_MULTI_SERVER_SERVERS="''${MEGAMEK_MULTI_SERVER_SERVERS:-${servers-file}}"
             export MEGAMEK_MULTI_SERVER_PASSWORDS="''${MEGAMEK_MULTI_SERVER_PASSWORDS:-${passwords-file'}}"
-            ${python}/bin/hypercorn --config "${quart-config-file} megamek_multi_server:app"
+            ${python}/bin/hypercorn --config "${quart-config-file}" megamek_multi_server:app
           '';
         }
       ) rec {
@@ -93,7 +95,7 @@
         passwords = null;
         passwords-file = pkgs.writeText "passwords.txt" ""; # No logins by default
         quart-config = {
-          bind = "localhost:80";
+          bind = "localhost:8000";
         };
       };
     };

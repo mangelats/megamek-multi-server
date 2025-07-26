@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import secrets
 from typing import cast
 
 from pydantic import RootModel
@@ -17,6 +18,7 @@ logger.setLevel(logging.INFO)
 
 app = Quart(__name__)
 app.config.from_prefixed_env()
+app.secret_key = secrets.token_urlsafe(32)
 QuartAuth(app)
 QuartMegaMek(app)
 
