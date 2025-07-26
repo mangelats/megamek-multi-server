@@ -1,12 +1,9 @@
 { pkgs }: let
-    lib = pkgs.lib;
-
     # Used JDK for this version
     jdk = pkgs.jdk21_headless;
 
-
     # Utils
-    utils = import ./utils.nix { inherit lib; };
+    utils = import ./utils.nix { lib = pkgs.lib; };
     
 
     # Source for the entire MegaMek application
@@ -70,7 +67,7 @@
             "${src}/lib/MegaMek.jar"
         '';
     };
-in {
+in rec {
     packages = { inherit src check-deps; };
     apps = {
         check-deps = {
@@ -79,7 +76,7 @@ in {
             meta.description = "Check dependencies linked";
         };
     };
-    lib = rec {
+    lib = {
         inherit version exe;
         meks = pkgs.stdenvNoCC.mkDerivation {
             name = "megamek-0.49.20-meks";
@@ -91,7 +88,7 @@ in {
             src = src;
             installPhase = ''cp -r data/boards/ $out'';
         };
-        config = lib.makeOverridable ({ gameoptions, derivation-name }: pkgs.stdenvNoCC.mkDerivation {
+        config = pkgs.lib.makeOverridable ({ gameoptions, derivation-name }: pkgs.stdenvNoCC.mkDerivation {
             name = derivation-name;
             src = src;
             installPhase = ''
@@ -110,14 +107,11 @@ in {
             #   in the code instead of a file with default values.
             gameoptions = null;
         };
-        setup = let
-            default = { inherit meks boards config; };
-            f = { meks, boards, config }: with utils.setup; [
-                (mkdir "data/logs")
-                (link "${meks}" "data/mechfiles")
-                (link "${boards}" "data/boards")
-                (link "${config}" "mmconf")
-            ];
-        in lib.makeOverridable f default;
+        setup = { meks?lib.meks, boards?lib.boards, config?lib.config}: with utils.setup; [
+            (mkdir "data/logs")
+            (link "${meks}" "data/mechfiles")
+            (link "${boards}" "data/boards")
+            (link "${config}" "mmconf")
+        ];
     };
 }

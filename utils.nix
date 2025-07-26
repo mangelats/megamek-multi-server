@@ -7,5 +7,8 @@
         contents = builtins.toJSON servers;
     in pkgs.writeText "servers.json" contents;
 
-    server-from = server: { inherit (server.lib) version exe setup; };
+    server-from = server: {
+        inherit (server.lib) version exe;
+        setup = server.lib.setup {};
+    };
 }
