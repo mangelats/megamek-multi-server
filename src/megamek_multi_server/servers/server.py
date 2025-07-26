@@ -1,5 +1,6 @@
 import asyncio
 from asyncio.subprocess import Process
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional
@@ -13,9 +14,12 @@ StateChanged = Callable[[UUID, "ServerState"], None]
 
 class MegaMekServer:
     _uuid: UUID
+    _config_name: str
     _server_description: ServerDescription
     _path: Path
     _port: int
+    _creator: Optional[str]
+    _creation_timestamp: datetime
 
     _state_changed: Optional[StateChanged]
 
@@ -27,6 +31,10 @@ class MegaMekServer:
         return self._uuid
 
     @property
+    def config_name(self) -> str:
+        return self._config_name
+
+    @property
     def mm_version(self) -> str:
         return self._server_description.version
 
@@ -35,6 +43,14 @@ class MegaMekServer:
         return self._port
 
     @property
+    def creator(self) -> int:
+        return self._creator
+    
+    @property
+    def creation_timestamp(self) -> datetime:
+        return self._creation_timestamp
+    
+    @property
     def state(self) -> "ServerState":
         if self._proc is not None and self._proc.returncode is not None:
             return ServerState.zombie
@@ -42,16 +58,23 @@ class MegaMekServer:
 
     def __init__(
         self,
-        server_description: ServerDescription,
+        config_name: str,
+        description: ServerDescription,
         base: Path,
         port: int,
         *,
         state_changed: Optional[StateChanged] = None,
+        id: Optional[UUID] = None,
+        creator: Optional[str] = None,
     ) -> None:
-        self._uuid = uuid4()
-        self._server_description = server_description
+        self._uuid = id or uuid4()
+        self._config_name = config_name
+        self._server_description = description
         self._path = base / str(self._uuid)
         self._port = port
+        self._creator = creator
+        self._creation_timestamp = datetime.now()
+        print(self._creation_timestamp)
 
         self._state_changed = state_changed
 

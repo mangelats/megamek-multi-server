@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -15,6 +15,7 @@ class CreateServer(BaseModel):
 
     cmd_type: Literal[CommandType.create_server] = Field(default=CommandType.create_server)
     server: str
+    id: Optional[UUID]
 
 
 class DestroyServer(BaseModel):

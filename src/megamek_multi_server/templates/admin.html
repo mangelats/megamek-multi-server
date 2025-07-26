@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaMek multi-server admin</title>
+    <link rel="stylesheet" href="./static/pico.classless.min.css">
+    <script async type="module">
+        import { afterLoad } from './static/utils.mjs';
+        import { ServerComs } from './static/coms.mjs';
+        const coms = new ServerComs()
+
+        afterLoad(() => {
+            for (const server of document.querySelectorAll('[data-create]')) {
+                const name = server.getAttribute('data-create')
+                server.addEventListener('click', () => {
+                    coms.create(name)
+                })
+            }
+        })
+        coms.addEventListener({
+            serversSet(servers) {
+                for (const info of servers) {
+                    this.serverAdded(info)
+                }
+            },
+            serverAdded(info) {
+                addRow({
+                    ...info,
+                    host: window.location.hostname,
+                })
+
+            },
+            serverStateChanged(id, new_state) {
+                const td = document.getElementById(id).querySelector('.state')
+                td.textContent = stateString(new_state)
+            },
+            serverRemoved(id) {
+                document.getElementById(id).remove()
+            },
+        })
+
+        function addRow({ creator, creation_timestamp, config_name, mm_version, host, port, id, state }) {
+            const destroy = document.createElement("button");
+            destroy.append("Para el servidor")
+            destroy.addEventListener("click", () => coms.destroy(id))
+
+            const state_td = td(stateString(state))
+            state_td.classList.add("state")
+
+            const tr = document.createElement('tr')
+            tr.id = id
+            tr.append(
+                td(creator),
+                td(creation_timestamp),
+                td(config_name),
+                td(mm_version),
+                td(host),
+                td(port),
+                td(id),
+                state_td,
+                destroy,
+            );
+            document.querySelector('tbody').prepend(tr)
+        }
+        function td(...contents) {
+            const el = document.createElement('td')
+            el.append(...contents)
+            return el
+        }
+
+        function stateString(state) {
+            const STATE_MAP = {
+                fresh: "Reservat",
+                setting_up: "Preparant",
+                spawning: "Aixecant",
+                running: "Funcionant",
+                stopping: "Parant",
+                cleaning_up: "Natejant",
+                dead: "Parat",
+                zombie: "Zombie",
+            }
+            if (state in STATE_MAP) {
+                return STATE_MAP[state]
+            } else {
+                console.warn("Unknown state value", state)
+                return "???"
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <div class="logout">Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></div>
+    </header>
+    <main>
+        <div>
+            {% for name in config_options %}
+                <button data-create="{{ name }}">Crea servidor: {{ name }}</button>
+            {% endfor %}
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Creador</th>
+                    <th scope="col">Temps de creació</th>
+                    <th scope="col">Configuració</th>
+                    <th scope="col">Versió</th>
+                    <th scope="col">Host</th>
+                    <th scope="col">Port</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Estat</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>

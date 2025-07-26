@@ -51,7 +51,7 @@ class QuartMegaMek:
             async with TemporaryDirectory() as temp_dir:
                 self._conductor = Conductor(Path(temp_dir), servers)
                 yield
-                await self._conductor.stop_all_servers()
+                await self._conductor.shutdown()
                 self._conductor = _ConductorState.closed
 
     @staticmethod
@@ -75,9 +75,9 @@ class QuartMegaMek:
         return QuartMegaMek._current_conductor().events()
 
     @staticmethod
-    async def apply_command(command: Command) -> None:
+    async def apply_command(command: Command, auth_id: Optional[str]) -> None:
         if isinstance(command, CreateServer):
-            await QuartMegaMek._current_conductor().start_server(command.server)
+            await QuartMegaMek._current_conductor().start_server(command.server, command.id, auth_id)
         elif isinstance(command, DestroyServer):
             await QuartMegaMek._current_conductor().stop_server(command.id)
 

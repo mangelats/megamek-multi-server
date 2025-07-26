@@ -2,6 +2,7 @@ import asyncio
 from asyncio import Queue
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Optional
 from uuid import UUID
 
 from pydantic import RootModel
@@ -30,13 +31,19 @@ class Conductor:
     def server_descriptions(self) -> list[str]:
         return list(self._descriptions.keys())
 
-    async def start_server(self, config_name: str) -> UUID:
+    async def start_server(self, config_name: str, id: Optional[UUID], creator: Optional[str]) -> UUID:
         description = self._descriptions[config_name]
 
         port = self._aquire_port()
         try:
             server = MegaMekServer(
-                description, self.base_path, port, state_changed=self._state_changed
+                config_name=config_name,
+                description=description,
+                base=self.base_path,
+                port=port,
+                state_changed=self._state_changed,
+                id=id,
+                creator=creator,
             )
             self._broadcast_event(ServerAdded(info=ServerInfo.from_server(server)))
             self._servers[server.id] = server
@@ -45,27 +52,30 @@ class Conductor:
         except Exception as e:
             self._aquired_ports.remove(port)
             raise e
+        
+    async def shutdown(self) -> None:
+        await self.stop_all_servers()
+        queues = self._queues
+        self._queues = []
+        for queue in queues:
+            queue.shutdown()
 
     async def stop_all_servers(self) -> None:
-        servers = self._servers
-        self._servers = {}
-        self._aquired_ports = set()
-        await asyncio.gather(*(server.stop() for server in servers.values()))
+        await asyncio.gather(*(self.stop_server(id) for id in self._servers.keys()))
 
     async def stop_server(self, server_id: UUID) -> None:
         server = self._servers[server_id]
-        port = server.port
         try:
             await server.stop()
         finally:
             del self._servers[server_id]
-            self._aquired_ports.remove(port)
             self._broadcast_event(ServerRemoved(id=server_id))
+            self._aquired_ports.remove(server.port)
 
-    def all_servers_info(self) -> list["ServerInfo"]:
+    def all_servers_info(self) -> list[ServerInfo]:
         return [ServerInfo.from_server(server) for server in self._servers.values()]
 
-    def server_info(self, server_id: UUID) -> "ServerInfo":
+    def server_info(self, server_id: UUID) -> ServerInfo:
         server = self._servers[server_id]
         return ServerInfo.from_server(server)
 
@@ -79,7 +89,7 @@ class Conductor:
     async def events(self) -> AsyncGenerator[Event, None]:
         queue: Queue[Event] = Queue()
         self._queues.add(queue)
-        yield ServersSet(servers=self.all_servers_info())
+        yield ServersSet(servers=self.all_servers_info()) # TODO remove from here
         try:
             while True:
                 yield await queue.get()

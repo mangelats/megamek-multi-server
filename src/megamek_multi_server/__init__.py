@@ -31,12 +31,22 @@ async def index():
         config_options=config_options,
     )
 
+@app.route("/admin")
+@login_required
+async def admin():
+    config_options = QuartMegaMek.config_options().model_dump()
+    return await render_template(
+        "admin.html",
+        name=current_user.auth_id,
+        config_options=config_options,
+    )
+
 
 @app.websocket("/ws")
 @login_required
 async def ws() -> None:
     try:
-        task = asyncio.ensure_future(_commands())
+        task = asyncio.ensure_future(_commands(current_user.auth_id))
         events = QuartMegaMek.events()
 
         async for event in events:
@@ -47,14 +57,12 @@ async def ws() -> None:
         await task
 
 
-async def _commands() -> None:
+async def _commands(auth_id) -> None:
     while True:
         try:
             message = await websocket.receive()
-            print("received message", message)
             cmd = RootModel[Command].model_validate_json(message)
-            print("command", cmd)
-            await QuartMegaMek.apply_command(cmd.root)
+            await QuartMegaMek.apply_command(cmd.root, auth_id)
         except Exception as e:
             print(e)
             raise e

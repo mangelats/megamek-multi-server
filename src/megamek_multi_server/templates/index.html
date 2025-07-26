@@ -3,180 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaMek multi-server</title>
-    <script type="text/javascript" async defer>
-        document.addEventListener('DOMContentLoaded', () => {
-            for (const server of document.querySelectorAll('.create')) {
-                const name = server.getAttribute('data-name')
-                server.querySelector('button').addEventListener('click', () => create(name))
+    <title>MegaMek multi-server admin</title>
+    <link rel="stylesheet" href="./static/pico.classless.min.css">
+    <script async type="module">
+        import { afterLoad } from './static/utils.mjs';
+        import { ServerComs } from './static/coms.mjs';
+
+        afterLoad(() => {
+            const username = document.getElementById("username").value
+
+            for (const server of document.querySelectorAll('[data-create]')) {
+                const name = server.getAttribute('data-create')
+                server.addEventListener('click', () => {
+                    coms.create(name)
+                })
+            }
+            const coms = new ServerComs()
+            coms.addEventListener({
+                serversSet(servers) {
+                    for (const info of servers) {
+                        this.serverAdded(info)
+                    }
+                },
+                serverAdded(info) {
+                    if (info.creator !== username) {
+                        console.error("Rejecting", info)
+                        return
+                    }
+                    addRow({
+                        ...info,
+                        host: window.location.hostname,
+                    })
+    
+                },
+                serverStateChanged(id, new_state) {
+                    const card = document.getElementById(id);
+                    if (!card) {
+                        return
+                    }
+                    const state = card.querySelector('.state')
+                    state.textContent = stateString(new_state)
+                },
+                serverRemoved(id) {
+                    const card = document.getElementById(id);
+                    if (!card) {
+                        return
+                    }
+                    card.remove()
+                },
+            })
+
+            function addRow({ config_name, host, port, state, id }) {
+                const stateEmoji = stateString(state)
+                const stateEl = span(stateEmoji)
+                stateEl.classList.add("state")
+                
+                const destroy = document.createElement("button");
+                destroy.append("Para el servidor")
+                destroy.addEventListener("click", () => coms.destroy(id))
+
+                const el = document.createElement('article')
+                el.id = id
+                el.append(
+                    div(`Name: ${config_name}`),
+                    div(`Host: ${host}`),
+                    div(`Port: ${port}`),
+                    div("State: ", stateEl),
+                    destroy,
+                )
+                document.getElementById("running").append(el)
+            }
+            function div(...contents) {
+                const el = document.createElement('div')
+                el.append(...contents)
+                return el
+            }
+            function span(...contents) {
+                const el = document.createElement('span')
+                el.append(...contents)
+                return el
+            }
+
+            function stateString(state) {
+                if (state === "running") {
+                    return "👍"
+                } else if (state === "dead") {
+                    return "💀"
+                } else if (state === "zombie") {
+                    return "🧟"
+                } else {
+                    return "⏳"
+                }
             }
         })
-
-        const ws = new WebSocket(`ws://${location.host}/ws`);
-        ws.addEventListener('message', function (e) {
-            const event = JSON.parse(e.data)
-            if (event.event_type === 'servers_set') {
-                serversSet(event.servers)
-            } else if (event.event_type === 'server_added') {
-                serverAdded(event.info)
-            } else if (event.event_type === 'server_state_changed') {
-                serverStateChanged(event.id, event.new_state)
-            } else if (event.event_type === 'server_removed') {
-                serverRemoved(event.id)
-            } else {
-                console.warn("Unknown event", event)
-            }
-        });
-        function create(server) {
-            console.log("Creating", server)
-            const message = {
-                cmd_type: 'create_server',
-                server,
-            }
-            const event = JSON.stringify(message)
-            ws.send(event)
-        }
-        function destroy(id) {
-            const message = {
-                cmd_type: 'destroy_server',
-                id,
-            }
-            const event = JSON.stringify(message)
-            ws.send(event)
-        }
-
-        function serversSet(servers) {
-            for (const info of servers) {
-                serverAdded(info)
-            }
-        }
-
-        function serverAdded(info) {
-            const hostname = window.location.hostname;
-
-            const el = document.createElement('div')
-            el.classList.add('server')
-            el.id = info.id
-            const ul = document.createElement('ul')
-            el.appendChild(ul)
-            {
-                const li = document.createElement('li')
-                li.appendChild(document.createTextNode('Identificador unic: '))
-                const data = document.createElement('data')
-                data.value = info.id
-                data.textContent = info.id
-                li.appendChild(data)
-                ul.appendChild(li)
-            }
-            {
-                const li = document.createElement('li')
-                li.appendChild(document.createTextNode('Host: '))
-                const data = document.createElement('data')
-                data.value = hostname
-                data.textContent = hostname
-                li.appendChild(data)
-                ul.appendChild(li)
-            }
-            {
-                const li = document.createElement('li')
-                li.appendChild(document.createTextNode('Port: '))
-                const data = document.createElement('data')
-                data.value = info.port.toString()
-                data.textContent = info.port.toString()
-                li.appendChild(data)
-                ul.appendChild(li)
-            }
-            {
-                const li = document.createElement('li')
-                li.appendChild(document.createTextNode('Versió de MegaMek: '))
-                const data = document.createElement('data')
-                data.value = info.mm_version
-                data.textContent = info.mm_version
-                li.appendChild(data)
-                ul.appendChild(li)
-            }
-            {
-                const li = document.createElement('li')
-                li.appendChild(document.createTextNode('Estat: '))
-                li.classList.add('state')
-                const data = document.createElement('data')
-                data.value = info.state
-                data.textContent = info.state
-                li.appendChild(data)
-                ul.appendChild(li)
-            }
-
-            const btn = document.createElement('button')
-            btn.textContent = 'Destruiex-lo'
-            btn.addEventListener('click', () => destroy(info.id))
-            el.appendChild(btn)
-
-            const servers = document.querySelector(".servers");
-            servers.insertBefore(el, servers.querySelector('.create'))
-        }
-
-        function serverStateChanged(id, new_state) {
-            const data = document.getElementById(id).querySelector('.state > data')
-            data.value = new_state
-            data.textContent = new_state
-        }
-
-        function serverRemoved(id) {
-            document.getElementById(id).remove()
-        }
     </script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-        html {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            box-sizing: border-box;
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0.5rem;
-            background-color: #f3f3f3;
-
-            display: flex;
-            flex-direction: column;
-            flex-wrap: nowrap;
-            gap: 1.5rem;
-        }
-        .logout {
-            font-size: smaller;
-            align-self: flex-end;
-        }
-
-        .servers {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(15ch, 33ch));
-            padding: 2rem;
-            gap: 2rem;
-        }
-
-        .servers > * {
-            height: 17.5rem;
-            padding: 2rem;
-            background-color: white;
-            border-radius: 1.5rem;
-            border: thin solid #666;
-        }
+        #running:not(:empty) ~ section { display: none }
     </style>
 </head>
 <body>
-    <div class="logout">Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></div>
-    <div class="servers">
-        {% for name in config_options %}
-            <div class="create" data-name="{{ name }}">
-                <button>Crea servidor: {{ name }}</button>
-            </div>
-        {% endfor %}
-    </div>
+    <header>
+        <div class="logout">Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></div>
+        <input type="hidden" id="username" value="{{name}}" />
+    </header>
+    <main>
+        <section id="running"></section>
+        <section>
+            {% for name in config_options %}
+                <button data-create="{{ name }}">Crea servidor: {{ name }}</button>
+            {% endfor %}
+        </section>
+    </main>
 </body>
 </html>
