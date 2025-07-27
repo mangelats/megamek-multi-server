@@ -82,12 +82,14 @@ in rec {
     lib = {
         inherit version exe;
         meks = pkgs.stdenvNoCC.mkDerivation {
-            name = "megamek-0.50-meks";
+            pname = "megamek-meks";
+            inherit version;
             src = src;
             installPhase = ''cp -r data/mekfiles/ $out'';
         };
         boards = pkgs.stdenvNoCC.mkDerivation {
-            name = "megamek-0.50-boards";
+            pname = "megamek-boards";
+            inherit version;
             src = src;
             installPhase = ''cp -r data/boards/ $out'';
         };
