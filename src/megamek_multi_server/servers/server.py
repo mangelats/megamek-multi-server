@@ -90,7 +90,7 @@ class MegaMekServer:
         self._set_state(ServerState.setting_up)
         await self._set_up()
         self._set_state(ServerState.spawning)
-        await self._spawn(self._server_description.exe)
+        await self._spawn()
         self._set_state(ServerState.running)
 
     async def stop(self) -> None:
@@ -112,9 +112,9 @@ class MegaMekServer:
     async def _set_up(self) -> None:
         await self._server_description.setup.set_up_in(self._path)
 
-    async def _spawn(self, process_args: list[str]) -> None:
+    async def _spawn(self) -> None:
         self._proc = await asyncio.create_subprocess_exec(
-            *process_args,
+            *self._server_description.exe,
             "-dedicated",
             "-port",
             str(self._port),
