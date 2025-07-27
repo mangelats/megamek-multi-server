@@ -65,21 +65,21 @@
         ];
       };
       
-      prod = pkgs.lib.makeOverridable ({ python, servers, passwords, passwords-file, quart-config }: let
+      prod = pkgs.lib.makeOverridable ({ python, servers, passwords, passwords-file, hypercorn-config }: let
           passwords-file' = if passwords != null then
             (utils.password-file passwords)
           else
             passwords-file
           ;
           servers-file = utils.servers-file servers;
-          quart-config-file = pkgs.writeText "quart-config.toml" (std.serde.toTOML quart-config);
+          hypercorn-config-file = pkgs.writeText "hypercorn-config.toml" (std.serde.toTOML hypercorn-config);
         in pkgs.writeShellApplication {
           name = "megamek-multi-server";
           text = ''
             export QUART_QUART_AUTH_DURATION="86400" # 24 hours
             export MEGAMEK_MULTI_SERVER_SERVERS="''${MEGAMEK_MULTI_SERVER_SERVERS:-${servers-file}}"
             export MEGAMEK_MULTI_SERVER_PASSWORDS="''${MEGAMEK_MULTI_SERVER_PASSWORDS:-${passwords-file'}}"
-            ${python}/bin/hypercorn --config "${quart-config-file}" megamek_multi_server:app
+            ${python}/bin/hypercorn --config "${hypercorn-config-file}" megamek_multi_server:app
           '';
         }
       ) rec {
@@ -90,7 +90,7 @@
         };
         passwords = null;
         passwords-file = pkgs.writeText "passwords.txt" ""; # No logins by default
-        quart-config = {
+        hypercorn-config = {
           bind = "localhost:80";
         };
       };
