@@ -74,7 +74,6 @@ class MegaMekServer:
         self._port = port
         self._creator = creator
         self._creation_timestamp = datetime.now()
-        print(self._creation_timestamp)
 
         self._state_changed = state_changed
 
@@ -113,11 +112,20 @@ class MegaMekServer:
         await self._server_description.setup.set_up_in(self._path)
 
     async def _spawn(self) -> None:
-        self._proc = await asyncio.create_subprocess_exec(
+        args = [
             *self._server_description.exe,
             "-dedicated",
             "-port",
             str(self._port),
+        ]
+        if self._server_description.game is not None:
+            args.extend([
+                "-savegame",
+                self._server_description.game,
+            ])
+
+        self._proc = await asyncio.create_subprocess_exec(
+            *args,
             cwd=self._path,
         )
         # TODO: await for port or proper logs
@@ -135,6 +143,8 @@ class MegaMekServer:
             print("Forcefully kill it")
             self._proc.kill()
             await self._proc.wait()
+        except ProcessLookupError:
+            pass
         self._proc = None
 
     async def _clean_up(self) -> None:

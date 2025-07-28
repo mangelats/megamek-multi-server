@@ -77,12 +77,12 @@ in rec {
         };
     };
 
-    server = pkgs.lib.makeOverridable ({ meks, boards, config, gameoptions, setup }: let
+    server = pkgs.lib.makeOverridable ({ meks, boards, config, gameoptions, setup, game }: let
         config' = if gameoptions != null
             then config.override { inherit gameoptions; }
             else config;
     in {
-        inherit version exe;
+        inherit version exe game;
         setup = if setup != null
             then setup
             else lib.mkSetup {
@@ -93,6 +93,7 @@ in rec {
         inherit (lib) meks boards config;
         gameoptions = null;
         setup = null;
+        game = null;
     };
 
     lib = {
@@ -130,6 +131,7 @@ in rec {
         };
         mkSetup = { meks, boards, config}: with utils.setup; [
             (mkdir "logs")
+            (mkdir "data")
             (link "${meks}" "data/mechfiles")
             (link "${boards}" "data/boards")
             (link "${config}" "mmconf")

@@ -1,7 +1,7 @@
 
 from aiofiles.os import makedirs, symlink
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 from pydantic import BaseModel, Field, RootModel
 
 
@@ -9,6 +9,7 @@ class ServerDescription(BaseModel):
     version: str
     exe: list[str]
     setup: 'ServerSetup'
+    game: Optional[str]
 
 class ServerSetup(RootModel):
     root: list['_Action']
