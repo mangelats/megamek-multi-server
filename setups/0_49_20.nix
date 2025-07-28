@@ -76,6 +76,25 @@ in rec {
             meta.description = "Check dependencies linked";
         };
     };
+
+    server = pkgs.lib.makeOverridable ({ meks, boards, config, gameoptions, setup }: let
+        config' = if gameoptions != null
+            then config.override { inherit gameoptions; }
+            else config;
+    in {
+        inherit version exe;
+        setup = if setup != null
+            then setup
+            else lib.mkSetup {
+                inherit meks boards;
+                config = config';
+            };
+    }) {
+        inherit (lib) meks boards config;
+        gameoptions = null;
+        setup = null;
+    };
+
     lib = {
         inherit version exe;
         meks = pkgs.stdenvNoCC.mkDerivation {
@@ -104,13 +123,13 @@ in rec {
                 cp "${gameoptions}" "$out/gameoptions.xml"
             '' else "");
         }) {
-            derivation-name = "megamek-0.49.20-config";
+            derivation-name = "megamek-config-${version}";
             # Unlike other configurations MegaMek has its gameoptions defaults
             #   in the code instead of a file with default values.
             gameoptions = null;
         };
-        setup = { meks?lib.meks, boards?lib.boards, config?lib.config}: with utils.setup; [
-            (mkdir "data/logs")
+        mkSetup = { meks, boards, config}: with utils.setup; [
+            (mkdir "logs")
             (link "${meks}" "data/mechfiles")
             (link "${boards}" "data/boards")
             (link "${config}" "mmconf")

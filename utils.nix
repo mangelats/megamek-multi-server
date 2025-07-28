@@ -1,14 +1,13 @@
-{ pkgs }: {
+{ pkgs }: let
+    attrsets = pkgs.lib.attrsets;
+in {
     password-file = passwords: let
-        contents = pkgs.lib.attrsets.foldlAttrs (acc: name: value: acc + "${name} ${value}\n") "" passwords;
+        contents = attrsets.foldlAttrs (acc: name: value: acc + "${name} ${value}\n") "" passwords;
     in pkgs.writeText "passwords.txt" contents;
 
     servers-file = servers: let
-        contents = builtins.toJSON servers;
+        is-not-override = (n: v: n != "override" && n != "overrideDerivation");
+        clean-servers = attrsets.filterAttrsRecursive is-not-override servers; 
+        contents = builtins.toJSON clean-servers;
     in pkgs.writeText "servers.json" contents;
-
-    server-from = server: {
-        inherit (server.lib) version exe;
-        setup = server.lib.setup {};
-    };
 }

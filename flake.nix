@@ -38,9 +38,9 @@
         ) {
           python = packages.python;
           servers = {
-            "Stock MegaMek v0.49.19" = utils.server-from lib.v0_49_19;
-            "Stock MegaMek v0.49.20" = utils.server-from lib.v0_49_20;
-            "Stock MegaMek v0.50.06" = utils.server-from lib.v0_50_06;
+            "Stock MegaMek v0.49.19" = lib.v0_49_19.server;
+            "Stock MegaMek v0.49.20" = lib.v0_49_20.server;
+            "Stock MegaMek v0.50.06" = lib.v0_50_06.server;
           };
           passwords = {
             # test => password
@@ -85,8 +85,8 @@
       ) rec {
         python = packages.python.override { extra-dependencies = ps: [ packages.app ps.hypercorn ]; };
         servers = {
-          "Stock MegaMek v0.49.20" = utils.server-from lib.v0_49_20;
-          "Stock MegaMek v0.50.06" = utils.server-from lib.v0_50_06;
+          "Stock MegaMek v0.49.20" = lib.v0_49_20.server;
+          "Stock MegaMek v0.50.06" = lib.v0_50_06.server;
         };
         passwords = null;
         passwords-file = pkgs.writeText "passwords.txt" ""; # No logins by default
