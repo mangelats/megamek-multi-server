@@ -115,6 +115,7 @@ in rec {
       pkgs.mypy
       pkgs.isort
       pkgs.black
+      (pkgs.writeShellScriptBin "pretty" ''isort src && black src'')
     ];
   };
 }
