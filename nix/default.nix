@@ -12,14 +12,16 @@ in rec {
     python = import ./python { inherit pkgs; };
     dev = pkgs.lib.makeOverridable ({ python, servers, passwords }: let
       passwords-file = utils.password-file passwords;
-      servers-file = utils.servers-file servers;
+      config-file = utils.config-file {
+        inherit servers;
+        passwords = passwords-file;
+      };
     in pkgs.writeShellApplication {
         name = "megamek-multi-server-dev"; # rename to "serve"?
         text = ''
           cd ./src
           export QUART_QUART_AUTH_DURATION="86400" # 24 hours
-          export MEGAMEK_MULTI_SERVER_SERVERS="${servers-file}"
-          export MEGAMEK_MULTI_SERVER_PASSWORDS="${passwords-file}"
+          export QUART_MEGAMEK_MULTI_SERVER="${config-file}"
           ${python}/bin/python -m megamek_multi_server
         '';
       }
@@ -59,14 +61,16 @@ in rec {
         else
           passwords-file
         ;
-        servers-file = utils.servers-file servers;
+        config-file = utils.config-file {
+          inherit servers;
+          passwords = passwords-file;
+        };
         hypercorn-config-file = pkgs.writeText "hypercorn-config.toml" (std.serde.toTOML hypercorn-config);
       in pkgs.writeShellApplication {
         name = "megamek-multi-server";
         text = ''
           export QUART_QUART_AUTH_DURATION="86400" # 24 hours
-          export MEGAMEK_MULTI_SERVER_SERVERS="''${MEGAMEK_MULTI_SERVER_SERVERS:-${servers-file}}"
-          export MEGAMEK_MULTI_SERVER_PASSWORDS="''${MEGAMEK_MULTI_SERVER_PASSWORDS:-${passwords-file'}}"
+          export QUART_MEGAMEK_MULTI_SERVER="${config-file}"
           ${python}/bin/hypercorn --config "${hypercorn-config-file}" megamek_multi_server:app
         '';
       }

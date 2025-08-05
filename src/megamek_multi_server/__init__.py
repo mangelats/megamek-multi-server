@@ -5,11 +5,18 @@ from typing import cast
 
 from pydantic import RootModel
 from quart import Quart, redirect, render_template, request, session, url_for, websocket
-from quart_auth import current_user, login_required, QuartAuth, Unauthorized
+from quart_auth import (
+    AuthUser,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+    QuartAuth,
+    Unauthorized,
+)
 
-from . import auth
-from .servers import Command, Event
-from .servers.extension import QuartMegaMek
+from .logic import Command, Event
+from .logic.extension import QuartMegaMek
 
 __all__ = ["app"]
 
@@ -32,6 +39,7 @@ async def index():
         name=current_user.auth_id,
         config_options=config_options,
     )
+
 
 @app.route("/admin")
 @login_required
@@ -78,7 +86,7 @@ async def login():
         form = await request.form
         username = form["username"]
         password = form["password"]
-        if user := auth.login(username, password):
+        if _user := _login_user(username, password):
             if next:
                 del session["next"]
             return redirect(next or "/")
@@ -88,6 +96,14 @@ async def login():
     return await render_template("login.html", error=error)
 
 
+def _login_user(username: str, password: str) -> AuthUser | None:
+    if not QuartMegaMek.auth().check_password(username=username, password=password):
+        return None
+    user = AuthUser(username)
+    login_user(user)
+    return user
+
+
 @app.errorhandler(Unauthorized)
 async def redirect_to_login(*_):
     return redirect(url_for("login"))
@@ -95,5 +111,5 @@ async def redirect_to_login(*_):
 
 @app.route("/logout")
 async def logout():
-    auth.logout()
+    logout_user()
     return redirect("/")

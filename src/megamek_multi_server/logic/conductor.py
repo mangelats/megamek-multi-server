@@ -12,7 +12,6 @@ from .server import MegaMekServer, ServerState
 from .server_description import ServerDescription
 from .server_info import ServerInfo
 
-AvailableServerDescriptions = RootModel[dict[str, ServerDescription]]
 
 class Conductor:
     _descriptions: dict[str, ServerDescription]
@@ -21,9 +20,9 @@ class Conductor:
     _aquired_ports: set[int]
     _queues: set[Queue[Event]]
 
-    def __init__(self, base_path: Path, descriptions: AvailableServerDescriptions) -> None:
+    def __init__(self, base_path: Path, descriptions: dict[str, ServerDescription]) -> None:
         self.base_path = base_path
-        self._descriptions = descriptions.root
+        self._descriptions = descriptions
         self._servers = {}
         self._aquired_ports = set()
         self._queues = set()
@@ -31,7 +30,9 @@ class Conductor:
     def server_descriptions(self) -> list[str]:
         return list(self._descriptions.keys())
 
-    async def start_server(self, config_name: str, id: Optional[UUID], creator: Optional[str]) -> UUID:
+    async def start_server(
+        self, config_name: str, id: Optional[UUID], creator: Optional[str]
+    ) -> UUID:
         description = self._descriptions[config_name]
 
         port = self._aquire_port()
@@ -52,7 +53,7 @@ class Conductor:
         except Exception as e:
             self._aquired_ports.remove(port)
             raise e
-        
+
     async def shutdown(self) -> None:
         await self.stop_all_servers()
         queues = self._queues
@@ -89,7 +90,7 @@ class Conductor:
     async def events(self) -> AsyncGenerator[Event, None]:
         queue: Queue[Event] = Queue()
         self._queues.add(queue)
-        yield ServersSet(servers=self.all_servers_info()) # TODO remove from here
+        yield ServersSet(servers=self.all_servers_info())  # TODO remove from here
         try:
             while True:
                 yield await queue.get()

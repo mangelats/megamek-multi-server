@@ -7,6 +7,7 @@ from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 import aioshutil
+
 from .server_description import ServerDescription, ServerSetup
 
 StateChanged = Callable[[UUID, "ServerState"], None]
@@ -45,11 +46,11 @@ class MegaMekServer:
     @property
     def creator(self) -> int:
         return self._creator
-    
+
     @property
     def creation_timestamp(self) -> datetime:
         return self._creation_timestamp
-    
+
     @property
     def state(self) -> "ServerState":
         if self._proc is not None and self._proc.returncode is not None:
@@ -119,10 +120,12 @@ class MegaMekServer:
             str(self._port),
         ]
         if self._server_description.game is not None:
-            args.extend([
-                "-savegame",
-                self._server_description.game,
-            ])
+            args.extend(
+                [
+                    "-savegame",
+                    self._server_description.game,
+                ]
+            )
 
         self._proc = await asyncio.create_subprocess_exec(
             *args,
