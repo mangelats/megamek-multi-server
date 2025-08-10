@@ -1,10 +1,8 @@
-import os
-import stat
 from typing import TypeVar
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-_Signature = tuple[int, int, float]
+from megamek_multi_server.utils.file_signature import Signature
 
 _DEFAULT_PASSWORD = generate_password_hash("")
 
@@ -13,7 +11,7 @@ class FileAuth:
     """User logging from a password file."""
 
     _path: str
-    _cache: tuple[_Signature, dict[str, str]]
+    _cache: tuple[Signature, dict[str, str]]
 
     def __init__(self, path: str):
         self._path = path
@@ -40,14 +38,14 @@ class FileAuth:
         return password_hash is not None and password_valid
 
     def _entries(self) -> dict[str, str]:
-        sig = _signature(self._path)
+        sig = Signature.for_file(self._path)
         if self._cache[0] != sig:
             self._update_cache(sig)
         return self._cache[1]
 
-    def _update_cache(self, sig: _Signature | None) -> None:
+    def _update_cache(self, sig: Signature | None) -> None:
         if sig is None:
-            sig = _signature(self._path)
+            sig = Signature.for_file(self._path)
         self._cache = (sig, _deserialize(self._path))
 
 
@@ -72,9 +70,3 @@ def _deserialize(path: str) -> dict[str, str]:
             [username, hashed_password] = line.rstrip().split(" ", 1)
             value[username] = hashed_password
     return value
-
-
-def _signature(path: str) -> _Signature:
-    """Computes a unique signature for a path state. Any will change it."""
-    st = os.stat(path)
-    return (stat.S_IFMT(st.st_mode), st.st_size, st.st_mtime)
