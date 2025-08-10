@@ -63,6 +63,7 @@ class QuartMegaMek:
             raise Exception("A conductor is already working")
 
     async def _run_conductor(self) -> AsyncGenerator[None, None]:
+        assert self._config is not None
         async with TemporaryDirectory() as temp_dir:
             self._conductor = Conductor(Path(temp_dir), self._config.servers)
             yield
@@ -75,7 +76,10 @@ class QuartMegaMek:
 
     @staticmethod
     def auth() -> FileAuth:
-        return QuartMegaMek.current()._file_auth
+        auth = QuartMegaMek.current()._file_auth
+        if auth is None:
+            raise Exception("Extension not yet initialized")
+        return auth
 
     @staticmethod
     def _current_conductor() -> Conductor:

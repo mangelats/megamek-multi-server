@@ -119,7 +119,8 @@ in rec {
       pkgs.mypy
       pkgs.isort
       pkgs.black
-      (pkgs.writeShellScriptBin "pretty" ''isort src && black src'')
+      (pkgs.writeShellScriptBin "check" ''${pkgs.mypy}/bin/mypy src'')
+      (pkgs.writeShellScriptBin "pretty" ''${pkgs.isort}/bin/isort src && ${pkgs.black}/bin/black src'')
     ];
   };
 }

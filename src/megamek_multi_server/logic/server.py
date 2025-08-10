@@ -44,7 +44,7 @@ class MegaMekServer:
         return self._port
 
     @property
-    def creator(self) -> int:
+    def creator(self) -> Optional[str]:
         return self._creator
 
     @property

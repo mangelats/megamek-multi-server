@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import RootModel
 
+from megamek_multi_server.utils.net import next_port
+
 from .events import Event, ServerAdded, ServerRemoved, ServersSet, ServerStateChanged
 from .server import MegaMekServer, ServerState
 from .server_description import ServerDescription
@@ -57,7 +59,7 @@ class Conductor:
     async def shutdown(self) -> None:
         await self.stop_all_servers()
         queues = self._queues
-        self._queues = []
+        self._queues = set()
         for queue in queues:
             queue.shutdown()
 
@@ -81,11 +83,9 @@ class Conductor:
         return ServerInfo.from_server(server)
 
     def _aquire_port(self) -> int:
-        for i in range(2346, 65535):
-            if i not in self._aquired_ports:
-                self._aquired_ports.add(i)
-                return i
-        raise Exception("All ports are full (WTF happened?)")
+        port = next_port(range(2346, 65535), self._aquired_ports)
+        self._aquired_ports.add(port)
+        return port
 
     async def events(self) -> AsyncGenerator[Event, None]:
         queue: Queue[Event] = Queue()

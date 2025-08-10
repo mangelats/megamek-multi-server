@@ -9,6 +9,8 @@
     
     deps = ps: [
         # Base
+        ps.psutil
+        ps.types-psutil
         ps.aiofiles
         ps.aioshutil
         ps.pydantic
