@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
-from pydantic import RootModel
-
 from megamek_multi_server.utils.net import next_port
 
 from .events import Event, ServerAdded, ServerRemoved, ServersSet, ServerStateChanged

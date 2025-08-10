@@ -1,6 +1,6 @@
 import asyncio
 from asyncio.subprocess import Process
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional
@@ -8,7 +8,9 @@ from uuid import UUID, uuid4
 
 import aioshutil
 
-from .server_description import ServerDescription, ServerSetup
+from megamek_multi_server.utils.net import wait_until_port_open
+
+from .server_description import ServerDescription
 
 StateChanged = Callable[[UUID, "ServerState"], None]
 
@@ -131,8 +133,7 @@ class MegaMekServer:
             *args,
             cwd=self._path,
         )
-        # TODO: await for port or proper logs
-        await asyncio.sleep(1)
+        await wait_until_port_open(self._port, timeout=timedelta(minutes=1))
 
     async def _stop(self) -> None:
         if self._proc is None:

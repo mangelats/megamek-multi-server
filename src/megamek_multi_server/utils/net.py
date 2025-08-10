@@ -1,6 +1,9 @@
 from collections.abc import Iterable
+from datetime import timedelta
 
 import psutil
+
+from megamek_multi_server.utils.retry import retry
 
 
 def next_port(ports: Iterable[int], used: set[int]) -> int:
@@ -15,9 +18,20 @@ def next_port(ports: Iterable[int], used: set[int]) -> int:
         raise Exception("No available ports")
 
 
-def is_open(port: int) -> bool:
-    return any(_is_conn_open(c, port) for c in psutil.net_connections(kind="inet"))
+def is_port_open(port: int) -> bool:
+    return any(_is_port_open(c, port) for c in psutil.net_connections(kind="inet"))
 
 
-def _is_conn_open(c, port: int) -> bool:
+def _is_port_open(c, port: int) -> bool:
     return c.laddr and c.laddr.port == port and c.status == psutil.CONN_LISTEN
+
+
+async def wait_until_port_open(port: int, *, timeout: timedelta | None = None):
+    await retry(lambda: _port_check(port), backoff_ratio=1.5, timeout=timeout)
+
+
+async def _port_check(port: int) -> None | tuple:
+    if is_port_open(port):
+        return ()
+    else:
+        return None
