@@ -1,6 +1,6 @@
 [project]
 name = "megamek-multi-server"
-version = "0.3.1"
+version = "0.3.2"
 description = "Manage MegaMek server with a web interface"
 authors = [
     {name="Martí Angelats i Ribera"}
