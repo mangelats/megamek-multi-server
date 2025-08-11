@@ -27,7 +27,12 @@ def _is_port_open(c, port: int) -> bool:
 
 
 async def wait_until_port_open(port: int, *, timeout: timedelta | None = None):
-    await retry(lambda: _port_check(port), backoff_ratio=1.5, timeout=timeout)
+    await retry(
+        lambda: _port_check(port),
+        backoff_ratio=1.5,
+        initial_wait=timedelta(seconds=1),
+        timeout=timeout,
+    )
 
 
 async def _port_check(port: int) -> None | tuple:

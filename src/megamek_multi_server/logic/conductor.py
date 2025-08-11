@@ -68,10 +68,11 @@ class Conductor:
         server = self._servers[server_id]
         try:
             await server.stop()
-        finally:
-            del self._servers[server_id]
-            self._broadcast_event(ServerRemoved(id=server_id))
-            self._aquired_ports.remove(server.port)
+        except Exception as e:
+            # The process may have crashed or something. The dead state may not
+            # be propegated, so we clean it up.
+            self._remove_server(server_id)
+            raise e
 
     def all_servers_info(self) -> list[ServerInfo]:
         return [ServerInfo.from_server(server) for server in self._servers.values()]
@@ -96,8 +97,20 @@ class Conductor:
         finally:
             self._queues.remove(queue)
 
-    def _state_changed(self, id: UUID, new_state: ServerState) -> None:
-        self._broadcast_event(ServerStateChanged(id=id, new_state=new_state))
+    def _state_changed(self, server_id: UUID, new_state: ServerState) -> None:
+        self._broadcast_event(ServerStateChanged(id=server_id, new_state=new_state))
+        if new_state == ServerState.dead:
+            self._remove_server(server_id)
+
+    def _remove_server(self, server_id: UUID) -> None:
+        server = self._servers.get(server_id)
+        if server is None:
+            # This can be called multiple times in some edge cases.
+            return
+
+        del self._servers[server_id]
+        self._broadcast_event(ServerRemoved(id=server_id))
+        self._aquired_ports.remove(server.port)
 
     def _broadcast_event(self, event: Event) -> None:
         for q in self._queues:

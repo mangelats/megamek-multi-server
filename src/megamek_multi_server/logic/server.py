@@ -1,6 +1,7 @@
 import asyncio
+import os.path
 from asyncio.subprocess import Process
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional
@@ -8,12 +9,16 @@ from uuid import UUID, uuid4
 
 import aioshutil
 
+from megamek_multi_server.utils.files import directory_modified
 from megamek_multi_server.utils.net import wait_until_port_open
+from megamek_multi_server.utils.sleep import schedule_at
 
 from .server_description import ServerDescription
 
 StateChanged = Callable[[UUID, "ServerState"], None]
 
+_MAX_WAIT_FOR_MM: timedelta = timedelta(minutes=1)
+_AUTO_STOP_SERVER: timedelta = timedelta(minutes=30)
 
 class MegaMekServer:
     _uuid: UUID
@@ -28,6 +33,7 @@ class MegaMekServer:
 
     _proc: Optional[Process]
     _state: "ServerState"
+    _auto_stop: asyncio.Task | None
 
     @property
     def id(self) -> UUID:
@@ -82,6 +88,7 @@ class MegaMekServer:
 
         self._proc = None
         self._state = ServerState.fresh
+        self._auto_stop = None
 
     async def start(self) -> None:
         """Starts the server with some config."""
@@ -133,9 +140,25 @@ class MegaMekServer:
             *args,
             cwd=self._path,
         )
-        await wait_until_port_open(self._port, timeout=timedelta(minutes=1))
+        await wait_until_port_open(self._port, timeout=_MAX_WAIT_FOR_MM)
+        await self._schedule_check_unused()
+
+    async def _schedule_check_unused(self) -> None:
+        mod = directory_modified(os.path.join(self._path, "logs"))
+        target = mod + _AUTO_STOP_SERVER
+        if target > datetime.now(timezone.utc):
+            self._auto_stop = schedule_at(target, self._schedule_check_unused())
+            return
+
+        self._auto_stop = None
+        if self._state == ServerState.running:
+            await self.stop()
 
     async def _stop(self) -> None:
+        if self._auto_stop is not None:
+            self._auto_stop.cancel()
+            self._auto_stop = None
+
         if self._proc is None:
             raise Exception("Trying to close a process that does not exist (how did we get here?)")
         try:
