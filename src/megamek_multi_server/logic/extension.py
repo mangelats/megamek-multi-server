@@ -63,7 +63,9 @@ class QuartMegaMek:
     async def _run_conductor(self) -> AsyncGenerator[None, None]:
         assert self._config is not None
         async with TemporaryDirectory() as temp_dir:
-            self._conductor = Conductor(Path(temp_dir), self._config.servers)
+            self._conductor = Conductor(
+                Path(temp_dir), self._config.servers, self._config.max_servers
+            )
             yield
             await self._conductor.shutdown()
             self._conductor = _ConductorState.closed

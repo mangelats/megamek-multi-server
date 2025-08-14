@@ -1,13 +1,22 @@
 import asyncio
+import json
 from asyncio import Queue
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from megamek_multi_server.utils.net import next_port
 
-from .events import Event, ServerAdded, ServerRemoved, ServersSet, ServerStateChanged
+from .events import (
+    ConfigChange,
+    Error,
+    Event,
+    ServerAdded,
+    ServerRemoved,
+    ServersSet,
+    ServerStateChanged,
+)
 from .server import MegaMekServer, ServerState
 from .server_description import ServerDescription
 from .server_info import ServerInfo
@@ -19,10 +28,17 @@ class Conductor:
     _servers: dict[UUID, MegaMekServer]
     _aquired_ports: set[int]
     _queues: set[Queue[Event]]
+    _max_servers: Optional[int]
 
-    def __init__(self, base_path: Path, descriptions: dict[str, ServerDescription]) -> None:
+    def __init__(
+        self,
+        base_path: Path,
+        descriptions: dict[str, ServerDescription],
+        max_servers: Optional[int],
+    ) -> None:
         self.base_path = base_path
         self._descriptions = descriptions
+        self._max_servers = max_servers
         self._servers = {}
         self._aquired_ports = set()
         self._queues = set()
@@ -32,8 +48,12 @@ class Conductor:
 
     async def start_server(
         self, config_name: str, id: Optional[UUID], creator: Optional[str]
-    ) -> UUID:
+    ) -> None:
         description = self._descriptions[config_name]
+
+        if self._max_servers is not None and self._max_servers <= len(self._aquired_ports):
+            self._broadcast_event(server_limit_reached_error(self._max_servers))
+            return
 
         port = self._aquire_port()
         try:
@@ -49,7 +69,6 @@ class Conductor:
             self._broadcast_event(ServerAdded(info=ServerInfo.from_server(server)))
             self._servers[server.id] = server
             await server.start()
-            return server.id
         except Exception as e:
             self._aquired_ports.remove(port)
             raise e
@@ -89,7 +108,9 @@ class Conductor:
     async def events(self) -> AsyncGenerator[Event, None]:
         queue: Queue[Event] = Queue()
         self._queues.add(queue)
-        yield ServersSet(servers=self.all_servers_info())  # TODO remove from here
+        # TODO move initial events from here
+        yield ConfigChange(max_servers=self._max_servers)
+        yield ServersSet(servers=self.all_servers_info())
         try:
             while True:
                 yield await queue.get()
@@ -116,3 +137,13 @@ class Conductor:
         for q in self._queues:
             # TODO: limit number of pending events
             q.put_nowait(event)
+
+
+def server_limit_reached_error(max_servers: int) -> Error:
+    return Error(
+        name="server_limit_reached",
+        message=f"S'ha arribat al limit de servidors ({max_servers}).",
+        extra_data={
+            "max_servers": max_servers,
+        },
+    )

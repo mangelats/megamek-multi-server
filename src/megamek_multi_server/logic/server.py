@@ -20,6 +20,7 @@ StateChanged = Callable[[UUID, "ServerState"], None]
 _MAX_WAIT_FOR_MM: timedelta = timedelta(minutes=1)
 _AUTO_STOP_SERVER: timedelta = timedelta(minutes=30)
 
+
 class MegaMekServer:
     _uuid: UUID
     _config_name: str

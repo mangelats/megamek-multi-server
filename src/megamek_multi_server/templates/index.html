@@ -11,6 +11,8 @@
 
         afterLoad(() => {
             const username = document.getElementById("username").value
+            let maxServers = null;
+            let usedServers = 0;
 
             for (const server of document.querySelectorAll('[data-create]')) {
                 const name = server.getAttribute('data-create')
@@ -20,20 +22,22 @@
             }
             const coms = new ServerComs()
             coms.addEventListener({
+                configChanged({ max_servers }) {
+                    maxServers = max_servers;
+                    updateUsedServers();
+                },
                 serversSet(servers) {
+                    usedServers = servers.length;
+                    updateUsedServers();
+
                     for (const info of servers) {
-                        this.serverAdded(info)
+                        _serverAdded(info)
                     }
                 },
                 serverAdded(info) {
-                    if (info.creator !== username) {
-                        console.error("Rejecting", info)
-                        return
-                    }
-                    addRow({
-                        ...info,
-                        host: window.location.hostname,
-                    })
+                    usedServers++;
+                    updateUsedServers();
+                    _serverAdded(info)
     
                 },
                 serverStateChanged(id, new_state) {
@@ -45,13 +49,44 @@
                     state.textContent = stateString(new_state)
                 },
                 serverRemoved(id) {
+                    usedServers--;
+                    updateUsedServers();
+                    
                     const card = document.getElementById(id);
                     if (!card) {
                         return
                     }
                     card.remove()
                 },
+                error(error) {
+                    console.error(error);
+                    document.getElementById("error").textContent = error.message;
+                }
             })
+
+            function _serverAdded(info) {
+                if (info.creator !== username) {
+                    console.log("Ignoring other people's servers", info)
+                    return
+                }
+                addRow({
+                    ...info,
+                    host: window.location.hostname,
+                })
+            }
+
+            function updateUsedServers() {
+                const btns = document.querySelectorAll('[data-create]')
+                if (maxServers !== null && usedServers >= maxServers) {
+                    for (const btn of btns) {
+                        btn.setAttribute("disabled", "disabled")
+                    }
+                } else {
+                    for (const btn of btns) {
+                        btn.removeAttribute("disabled")
+                    }
+                }
+            }
 
             function addRow({ config_name, host, port, state, id }) {
                 const stateEmoji = stateString(state)
@@ -99,6 +134,8 @@
     </script>
     <style>
         #running:not(:empty) ~ section { display: none }
+        #error { color: var(--pico-del-color) }
+        #error:empty { display: none }
     </style>
 </head>
 <body>
@@ -113,6 +150,7 @@
                 <button data-create="{{ name }}">Crea servidor: {{ name }}</button>
             {% endfor %}
         </section>
+        <section id="error"></section>
     </main>
 </body>
 </html>

@@ -10,11 +10,12 @@ in rec {
   };
   packages = {
     python = import ./python { inherit pkgs; };
-    dev = pkgs.lib.makeOverridable ({ python, servers, passwords }: let
+    dev = pkgs.lib.makeOverridable ({ python, servers, passwords, max-servers }: let
       passwords-file = utils.password-file passwords;
       config-file = utils.config-file {
         inherit servers;
         passwords = passwords-file;
+        maxServers = max-servers;
       };
     in pkgs.writeShellApplication {
         name = "megamek-multi-server-dev"; # rename to "serve"?
@@ -36,6 +37,7 @@ in rec {
         # test => password
         test = "scrypt:32768:8:1$lWV55EaDMutmo8c7$aa5600942ddcda2ae2e1dedfad51618336fa7314b931b920e3fd680d5b3b9f98973b1f8b1761a60d5d560afc1da57b7c615d82b75c44cfc552c1e254e0290e56";
       };
+      max-servers = 2;
     };
     
     app = pkgs.python3Packages.buildPythonPackage rec {
@@ -55,7 +57,7 @@ in rec {
       ];
     };
     
-    prod = pkgs.lib.makeOverridable ({ python, servers, passwords, passwords-file, hypercorn-config }: let
+    prod = pkgs.lib.makeOverridable ({ python, servers, passwords, passwords-file, max-servers, hypercorn-config }: let
         passwords-file' = if passwords != null then
           (utils.password-file passwords)
         else
@@ -64,6 +66,7 @@ in rec {
         config-file = utils.config-file {
           inherit servers;
           passwords = passwords-file;
+          maxServers = max-servers;
         };
         hypercorn-config-file = pkgs.writeText "hypercorn-config.toml" (std.serde.toTOML hypercorn-config);
       in pkgs.writeShellApplication {
@@ -85,6 +88,7 @@ in rec {
       hypercorn-config = {
         bind = "localhost:80";
       };
+      max-servers = null;
     };
 
     gen-pass = pkgs.writers.writePython3Bin "gen-pass" { libraries = [ pkgs.python3Packages.werkzeug ]; } ''

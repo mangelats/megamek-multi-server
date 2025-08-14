@@ -18,13 +18,27 @@
                 })
             }
         })
+
+        let maxServers = null;
+        let usedServers = 0;
         coms.addEventListener({
+            configChanged({ max_servers }) {
+                maxServers = max_servers;
+                updateUsedServers();
+            },
             serversSet(servers) {
+                usedServers = servers.length;
+                updateUsedServers();
                 for (const info of servers) {
-                    this.serverAdded(info)
+                    addRow({
+                        ...info,
+                        host: window.location.hostname,
+                    })
                 }
             },
             serverAdded(info) {
+                usedServers++;
+                updateUsedServers();
                 addRow({
                     ...info,
                     host: window.location.hostname,
@@ -36,8 +50,14 @@
                 td.textContent = stateString(new_state)
             },
             serverRemoved(id) {
+                usedServers--;
+                updateUsedServers();
                 document.getElementById(id).remove()
             },
+            error(error) {
+                console.error(error);
+                document.getElementById("error").textContent = error.message;
+            }
         })
 
         function addRow({ creator, creation_timestamp, config_name, mm_version, host, port, id, state }) {
@@ -69,6 +89,19 @@
             return el
         }
 
+        function updateUsedServers() {
+            const btns = document.querySelectorAll('[data-create]')
+            if (maxServers !== null && usedServers >= maxServers) {
+                for (const btn of btns) {
+                    btn.setAttribute("disabled", "disabled")
+                }
+            } else {
+                for (const btn of btns) {
+                    btn.removeAttribute("disabled")
+                }
+            }
+        }
+
         function stateString(state) {
             const STATE_MAP = {
                 fresh: "Reservat",
@@ -88,6 +121,10 @@
             }
         }
     </script>
+    <style>
+        #error { color: var(--pico-del-color) }
+        #error:empty { display: none }
+    </style>
 </head>
 <body>
     <header>
@@ -99,6 +136,7 @@
                 <button data-create="{{ name }}">Crea servidor: {{ name }}</button>
             {% endfor %}
         </div>
+        <section id="error"></section>
         <table>
             <thead>
                 <tr>

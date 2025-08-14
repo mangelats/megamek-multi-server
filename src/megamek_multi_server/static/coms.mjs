@@ -16,12 +16,17 @@ export class ServerComs {
         if (typeof listener === 'function') {
             this.listeners.push(listener)
         } else {
+            const configChanged = asListener(listener, 'configChanged');
             const serversSet = asListener(listener, 'serversSet');
             const serverAdded = asListener(listener, 'serverAdded');
             const serverStateChanged = asListener(listener, 'serverStateChanged');
             const serverRemoved = asListener(listener, 'serverRemoved');
+            const error = asListener(listener, 'error');
             this.addEventListener((event) => {
-                if (event.event_type === 'servers_set') {
+                console.debug(event)
+                if (event.event_type === 'config_changed') {
+                    configChanged(event)
+                } else if (event.event_type === 'servers_set') {
                     serversSet(event.servers)
                 } else if (event.event_type === 'server_added') {
                     serverAdded(event.info)
@@ -29,6 +34,8 @@ export class ServerComs {
                     serverStateChanged(event.id, event.new_state)
                 } else if (event.event_type === 'server_removed') {
                     serverRemoved(event.id)
+                } else if (event.event_type === 'error') {
+                    error(event.id)
                 } else {
                     console.warn("Unknown event", event)
                 }
