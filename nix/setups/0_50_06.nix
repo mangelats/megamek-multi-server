@@ -46,9 +46,9 @@
         "lib/txw2-4.0.5.jar"
         "lib/istack-commons-runtime-4.1.2.jar"
     ];
-    exe = [
+    exe-for-heap-sizes = { min-heap-size ? null, max-heap-size ? null }: [
         "${jdk}/bin/java"
-        "-Xmx512m"
+    ] ++ (utils.heap-size {min = min-heap-size; max = max-heap-size;}) ++ [
         "--add-opens"
         "java.base/java.util=ALL-UNNAMED"
         "--add-opens"
@@ -80,12 +80,13 @@ in rec {
         };
     };
 
-    server = pkgs.lib.makeOverridable ({ meks, boards, config, gameoptions, setup, game }: let
+    server = pkgs.lib.makeOverridable ({ min-heap-size, max-heap-size, meks, boards, config, gameoptions, setup, game }: let
         config' = if gameoptions != null
             then config.override { inherit gameoptions; }
             else config;
     in {
-        inherit version exe game;
+        inherit version game;
+        exe = exe-for-heap-sizes { inherit min-heap-size max-heap-size; };
         setup = if setup != null
             then setup
             else lib.mkSetup {
@@ -94,13 +95,15 @@ in rec {
             };
     }) {
         inherit (lib) meks boards config;
+        min-heap-size = null;
+        max-heap-size = "512m";
         gameoptions = null;
         setup = null;
         game = null;
     };
 
     lib = {
-        inherit version exe;
+        inherit version exe-for-heap-sizes;
         meks = pkgs.stdenvNoCC.mkDerivation {
             pname = "megamek-meks";
             inherit version;

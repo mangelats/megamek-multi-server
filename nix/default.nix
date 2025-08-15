@@ -32,6 +32,9 @@ in rec {
         "Stock MegaMek v0.49.19" = lib.v0_49_19.server;
         "Stock MegaMek v0.49.20" = lib.v0_49_20.server;
         "Stock MegaMek v0.50.06" = lib.v0_50_06.server;
+        "More memory v0.50.06" = lib.v0_50_06.server.override {
+          max-heap-size = "1024m";
+        };
       };
       passwords = {
         # test => password
