@@ -1,6 +1,6 @@
 { pkgs }: pkgs.lib.makeOverridable (
 { extra-dependencies }: let
-    python3 = pkgs.python3.override {
+    python3 = pkgs.python313.override {
         self = python3;
         packageOverrides = pyfinal: pyprev: {
             quart-auth = pyfinal.callPackage ./quart-auth.nix { };

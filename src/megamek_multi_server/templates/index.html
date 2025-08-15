@@ -6,7 +6,7 @@
     <title>MegaMek multi-server admin</title>
     <link rel="stylesheet" href="./static/pico.classless.min.css">
     <script async type="module">
-        import { afterLoad } from './static/utils.mjs';
+        import { afterLoad, stateEl, updateStateEl } from './static/utils.mjs';
         import { ServerComs } from './static/coms.mjs';
 
         afterLoad(() => {
@@ -46,7 +46,7 @@
                         return
                     }
                     const state = card.querySelector('.state')
-                    state.textContent = stateString(new_state)
+                    updateStateEl(state, new_state)
                 },
                 serverRemoved(id) {
                     usedServers--;
@@ -89,10 +89,6 @@
             }
 
             function addRow({ config_name, host, port, state, id }) {
-                const stateEmoji = stateString(state)
-                const stateEl = span(stateEmoji)
-                stateEl.classList.add("state")
-                
                 const destroy = document.createElement("button");
                 destroy.append("Para el servidor")
                 destroy.addEventListener("click", () => coms.destroy(id))
@@ -100,10 +96,10 @@
                 const el = document.createElement('article')
                 el.id = id
                 el.append(
-                    div(`Name: ${config_name}`),
+                    div(`Nom: ${config_name}`),
                     div(`Host: ${host}`),
                     div(`Port: ${port}`),
-                    div("State: ", stateEl),
+                    div("Estat: ", stateEl(state)),
                     destroy,
                 )
                 document.getElementById("running").append(el)
@@ -118,29 +114,19 @@
                 el.append(...contents)
                 return el
             }
-
-            function stateString(state) {
-                if (state === "running") {
-                    return "👍"
-                } else if (state === "dead") {
-                    return "💀"
-                } else if (state === "zombie") {
-                    return "🧟"
-                } else {
-                    return "⏳"
-                }
-            }
         })
     </script>
     <style>
         #running:not(:empty) ~ section { display: none }
         #error { color: var(--pico-del-color) }
         #error:empty { display: none }
+
+        .state { border: none !important }
     </style>
 </head>
 <body>
     <header>
-        <div class="logout">Connectat com {{name}}. <a href="/logout">Desconnecta'm</a></div>
+        <div class="logout">Connectat com a <code>{{name}}</code> <a href="/logout">Desconnecta'm</a></div>
         <input type="hidden" id="username" value="{{name}}" />
     </header>
     <main>
