@@ -45,12 +45,12 @@ in rec {
     
     app = pkgs.python313Packages.buildPythonPackage rec {
       pname = "megamek_multi_server";
-      version = "0.3.5";
+      version = "0.3.6";
       src = pkgs.fetchFromGitHub {
         owner = "mangelats";
         repo = "megamek-multi-server";
-        rev = "365db08e5326a4ec89efb2fc2959671cbf18e425";
-        hash = "sha256-pAODdI9jZWUgP2XDkjnZdVDqe2NYDWyFQqX/QopOs+E=";
+        rev = "1f343da9b55d3f6bb749ee787d8d787805cbadf4";
+        hash = "sha256-Vl8y93IHrNvV+uJ5LaILBXq5w2+4g6N+M6PBU7gHu1E=";
       };
       propagatedBuildInputs = [ packages.python ];
       
