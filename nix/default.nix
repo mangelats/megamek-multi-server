@@ -40,20 +40,20 @@ in rec {
       max-servers = 2;
     };
     
-    app = pkgs.python3Packages.buildPythonPackage rec {
+    app = pkgs.python313Packages.buildPythonPackage rec {
       pname = "megamek_multi_server";
-      version = "0.3.4";
+      version = "0.3.5";
       src = pkgs.fetchFromGitHub {
         owner = "mangelats";
         repo = "megamek-multi-server";
-        rev = "7b44d64a8689839451c9bb31cee33b1f370368ae";
-        hash = "sha256-FNn/0MwgQu+kl9vMeyRe17RZC8iiY76TpyXjo/buzeE=";
+        rev = "365db08e5326a4ec89efb2fc2959671cbf18e425";
+        hash = "sha256-pAODdI9jZWUgP2XDkjnZdVDqe2NYDWyFQqX/QopOs+E=";
       };
       propagatedBuildInputs = [ packages.python ];
       
       pyproject = true;
       build-system = [
-        pkgs.python3Packages.pdm-backend
+        pkgs.python313Packages.pdm-backend
       ];
     };
     
