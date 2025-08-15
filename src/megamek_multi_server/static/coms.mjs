@@ -2,7 +2,8 @@ import { noop } from './utils.mjs'
 
 export class ServerComs {
     constructor() {
-        this.ws = new WebSocket(`ws://${location.host}/ws`)
+        const protocol = wsProtocol()
+        this.ws = new WebSocket(`${protocol}//${location.host}/ws`)
         this.listeners = []
         this.ws.addEventListener('message', e => {
             const event = JSON.parse(e.data)
@@ -72,5 +73,16 @@ function asListener(obj, name) {
         return f.bind(obj)
     } else {
         return noop
+    }
+}
+
+function wsProtocol() {
+    const p = window.location.protocol
+    if (p === "https:") {
+        return "wss:"
+    } else if (p === "http:") {
+        return "ws:"
+    } else {
+        throw new Error("Unknown protocol")
     }
 }
