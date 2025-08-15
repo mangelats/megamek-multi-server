@@ -65,7 +65,7 @@ in rec {
         ;
         config-file = utils.config-file {
           inherit servers;
-          passwords = passwords-file;
+          passwords = passwords-file';
           maxServers = max-servers;
         };
         hypercorn-config-file = pkgs.writeText "hypercorn-config.toml" (std.serde.toTOML hypercorn-config);
