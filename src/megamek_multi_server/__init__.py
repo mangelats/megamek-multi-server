@@ -1,7 +1,7 @@
 import asyncio
-from datetime import timedelta
 import logging
 import secrets
+from datetime import timedelta
 from typing import cast
 
 from pydantic import RootModel
@@ -27,7 +27,7 @@ logger.setLevel(logging.INFO)
 app = Quart(__name__)
 app.config.from_prefixed_env()
 app.secret_key = secrets.token_urlsafe(32)
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = timedelta(seconds=0)
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(seconds=0)
 QuartAuth(app)
 QuartMegaMek(app)
 

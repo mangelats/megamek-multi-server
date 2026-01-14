@@ -1,4 +1,6 @@
+todo.md
 .direnv
+.vscode/
 /result
 
 # Byte-compiled / optimized / DLL files
