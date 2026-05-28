@@ -6,6 +6,7 @@ in rec {
     #   they should be.
     v0_49_19 = import ./setups/0_49_19.nix { inherit pkgs; };
     v0_49_20 = import ./setups/0_49_20.nix { inherit pkgs; };
+    v0_50_03 = import ./setups/0_50_03.nix { inherit pkgs; };
     v0_50_06 = import ./setups/0_50_06.nix { inherit pkgs; };
   };
   packages = {
@@ -31,6 +32,7 @@ in rec {
       servers = {
         "Stock MegaMek v0.49.19" = lib.v0_49_19.server;
         "Stock MegaMek v0.49.20" = lib.v0_49_20.server;
+        "Stock MegaMek v0.50.03" = lib.v0_50_03.server;
         "Stock MegaMek v0.50.06" = lib.v0_50_06.server;
         "More memory v0.50.06" = lib.v0_50_06.server.override {
           max-heap-size = "1024m";
