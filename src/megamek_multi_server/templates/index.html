@@ -118,10 +118,19 @@
     </script>
     <style>
         #running:not(:empty) ~ section { display: none }
+        #buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6em;
+            button {
+                font-variant-numeric: tabular-nums;
+            }
+        }
         #error { color: var(--pico-del-color) }
         #error:empty { display: none }
 
         .state { border: none !important }
+        
     </style>
 </head>
 <body>
@@ -131,7 +140,7 @@
     </header>
     <main>
         <section id="running"></section>
-        <section>
+        <section id="buttons">
             {% for name in config_options %}
                 <button data-create="{{ name }}">Crea servidor: {{ name }}</button>
             {% endfor %}
