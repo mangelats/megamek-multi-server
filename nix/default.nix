@@ -120,6 +120,7 @@ in rec {
       program = "${packages.gen-pass}/bin/gen-pass";
       meta.description = "Open script to generate password entries";
     };
+    check-deps = pkgs.lib.attrsets.mapAttrs (_: value: value.apps.check-deps) lib;
   };
 
   devShells.default = pkgs.mkShellNoCC {

@@ -19,7 +19,7 @@
         "lib/jackson-core-2.17.2.jar"
         "lib/flatlaf-extras-3.5.1.jar"
         "lib/flatlaf-3.5.1.jar"
-        "lib/jakarta.mail-2.0.1.jar"
+        # "lib/jakarta.mail-2.0.1.jar"
         "lib/xstream-1.4.20.jar"
         "lib/jaxb-runtime-4.0.5.jar"
         "lib/jaxb-core-4.0.5.jar"
@@ -73,7 +73,7 @@ in rec {
         check-deps = {
             type = "app";
             program = "${check-deps}/bin/check-megamek-deps";
-            meta.description = "Check dependencies linked";
+            meta.description = "Check dependencies linked for MegaMek v${version}";
         };
     };
 

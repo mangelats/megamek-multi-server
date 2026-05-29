@@ -76,7 +76,7 @@ in rec {
         check-deps = {
             type = "app";
             program = "${check-deps}/bin/check-megamek-deps";
-            meta.description = "Check dependencies linked";
+            meta.description = "Check dependencies linked for MegaMek v${version}";
         };
     };
 
